@@ -21,7 +21,7 @@ function applyTheme(theme: ThemeName) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function fromDb(row: any): Settings {
-  // Prefer DB theme if column exists, otherwise fall back to localStorage
+  // If DB has no theme column (null), fall back to localStorage cache
   const dbTheme = row.theme && row.theme in THEMES ? (row.theme as ThemeName) : null;
   return {
     symbols:       row.symbols        ?? DEFAULT_SETTINGS.symbols,
@@ -48,8 +48,11 @@ export function useSettings() {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
 
   useEffect(() => {
-    // Apply localStorage theme immediately before Supabase responds
-    applyTheme(getLocalTheme());
+    // Update state from localStorage — the theme effect below handles the actual DOM apply
+    const localTheme = getLocalTheme();
+    if (localTheme !== DEFAULT_SETTINGS.theme) {
+      setSettings((prev) => ({ ...prev, theme: localTheme }));
+    }
 
     supabase
       .from("settings")
@@ -61,7 +64,7 @@ export function useSettings() {
       });
   }, []);
 
-  // Apply theme to DOM whenever it changes
+  // Single place that applies theme to DOM — runs whenever settings.theme changes
   useEffect(() => {
     applyTheme(settings.theme);
   }, [settings.theme]);
