@@ -42,6 +42,15 @@ export function useSettings() {
       });
   }, []);
 
+  // Apply theme CSS vars whenever theme changes
+  useEffect(() => {
+    const t = THEMES[settings.theme] ?? THEMES.green;
+    const root = document.documentElement;
+    root.style.setProperty("--accent",  t.accent);
+    root.style.setProperty("--accent2", t.accent2);
+    root.style.setProperty("--shadow",  t.shadow);
+  }, [settings.theme]);
+
   const update = useCallback((patch: Partial<Settings>) => {
     setSettings((prev) => ({ ...prev, ...patch }));
     supabase.from("settings").update(toDb(patch)).eq("id", 1);
