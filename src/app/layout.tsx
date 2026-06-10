@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Press_Start_2P } from "next/font/google";
 import "./globals.css";
+import { SettingsProvider } from "@/components/SettingsProvider";
 
 const pressStart = Press_Start_2P({
   weight: "400",
@@ -20,7 +21,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${pressStart.variable} h-full`}>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <SettingsProvider>{children}</SettingsProvider>
+      </body>
     </html>
   );
 }

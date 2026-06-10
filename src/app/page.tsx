@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useTrades } from "@/hooks/useTrades";
-import { useSettings } from "@/hooks/useSettings";
+import { useSettings } from "@/components/SettingsProvider";
 import { TradeModal } from "@/components/TradeModal";
 import { EquityChart } from "@/components/EquityChart";
 import { Trade, tradePnl, tradePct } from "@/types/trade";

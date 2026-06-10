@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { useSettings } from "@/hooks/useSettings";
+import { useSettings } from "@/components/SettingsProvider";
 import { DEFAULT_SETTINGS, THEMES, ThemeName } from "@/types/settings";
 
 function ListSection({
