@@ -12,6 +12,12 @@
   --red:      #ff4444;
 }
 
+html[data-theme="cyan"]   { --accent: #00ffff; --accent2: #00cccc; --shadow: #003333; }
+html[data-theme="purple"] { --accent: #cc44ff; --accent2: #aa22dd; --shadow: #220033; }
+html[data-theme="amber"]  { --accent: #ffaa00; --accent2: #cc8800; --shadow: #332200; }
+html[data-theme="red"]    { --accent: #ff4466; --accent2: #cc2244; --shadow: #330011; }
+html[data-theme="blue"]   { --accent: #4488ff; --accent2: #2266cc; --shadow: #001133; }
+
 @theme inline {
   --color-background: var(--bg);
   --color-foreground: var(--text);
@@ -162,7 +168,7 @@ body::after {
 
 .pixel-input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(0, 255, 136, 0.08);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent), transparent 92%);
 }
 
 /* date input calendar icon color */

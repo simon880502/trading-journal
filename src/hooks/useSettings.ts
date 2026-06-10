@@ -6,16 +6,30 @@ import { supabase } from "@/lib/supabase";
 
 const THEME_LS_KEY = "tj_theme";
 
+function getLocalTheme(): ThemeName {
+  try {
+    const v = localStorage.getItem(THEME_LS_KEY);
+    if (v && v in THEMES) return v as ThemeName;
+  } catch {}
+  return DEFAULT_SETTINGS.theme;
+}
+
+function applyTheme(theme: ThemeName) {
+  document.documentElement.setAttribute("data-theme", theme);
+  try { localStorage.setItem(THEME_LS_KEY, theme); } catch {}
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function fromDb(row: any): Settings {
-  const theme = (row.theme && row.theme in THEMES ? row.theme : DEFAULT_SETTINGS.theme) as ThemeName;
+  // Prefer DB theme if column exists, otherwise fall back to localStorage
+  const dbTheme = row.theme && row.theme in THEMES ? (row.theme as ThemeName) : null;
   return {
     symbols:       row.symbols        ?? DEFAULT_SETTINGS.symbols,
     timeframes:    row.timeframes     ?? DEFAULT_SETTINGS.timeframes,
     entryReasons:  row.entry_reasons  ?? DEFAULT_SETTINGS.entryReasons,
     exitReasons:   row.exit_reasons   ?? DEFAULT_SETTINGS.exitReasons,
     emotionLabels: row.emotion_labels ?? DEFAULT_SETTINGS.emotionLabels,
-    theme,
+    theme:         dbTheme ?? getLocalTheme(),
   };
 }
 
@@ -30,29 +44,13 @@ function toDb(patch: Partial<Settings>) {
   return result;
 }
 
-function cachedTheme(): ThemeName {
-  try {
-    const v = localStorage.getItem(THEME_LS_KEY);
-    if (v && v in THEMES) return v as ThemeName;
-  } catch {}
-  return DEFAULT_SETTINGS.theme;
-}
-
 export function useSettings() {
-  const [settings, setSettings] = useState<Settings>({
-    ...DEFAULT_SETTINGS,
-    theme: DEFAULT_SETTINGS.theme,
-  });
-
-  // Load cached theme immediately on mount (before Supabase responds)
-  useEffect(() => {
-    const t = cachedTheme();
-    if (t !== DEFAULT_SETTINGS.theme) {
-      setSettings((prev) => ({ ...prev, theme: t }));
-    }
-  }, []);
+  const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
 
   useEffect(() => {
+    // Apply localStorage theme immediately before Supabase responds
+    applyTheme(getLocalTheme());
+
     supabase
       .from("settings")
       .select("*")
@@ -63,14 +61,9 @@ export function useSettings() {
       });
   }, []);
 
-  // Apply CSS vars + persist to localStorage whenever theme changes
+  // Apply theme to DOM whenever it changes
   useEffect(() => {
-    const t = THEMES[settings.theme] ?? THEMES.green;
-    const root = document.documentElement;
-    root.style.setProperty("--accent",  t.accent);
-    root.style.setProperty("--accent2", t.accent2);
-    root.style.setProperty("--shadow",  t.shadow);
-    try { localStorage.setItem(THEME_LS_KEY, settings.theme); } catch {}
+    applyTheme(settings.theme);
   }, [settings.theme]);
 
   const update = useCallback((patch: Partial<Settings>) => {
