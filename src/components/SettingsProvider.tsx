@@ -13,10 +13,7 @@ function saveLocal(s: Settings) {
 function loadLocal(): Settings | null {
   try {
     const v = localStorage.getItem(LS_KEY);
-    if (v) {
-      const parsed = JSON.parse(v) as Partial<Settings>;
-      return { ...DEFAULT_SETTINGS, ...parsed };
-    }
+    if (v) return { ...DEFAULT_SETTINGS, ...(JSON.parse(v) as Partial<Settings>) };
   } catch {}
   return null;
 }
@@ -30,19 +27,20 @@ function fromDb(row: any): Settings {
     entryReasons:  row.entry_reasons  ?? DEFAULT_SETTINGS.entryReasons,
     exitReasons:   row.exit_reasons   ?? DEFAULT_SETTINGS.exitReasons,
     emotionLabels: row.emotion_labels ?? DEFAULT_SETTINGS.emotionLabels,
-    theme:         dbTheme ?? loadLocal()?.theme ?? DEFAULT_SETTINGS.theme,
+    theme:         dbTheme ?? DEFAULT_SETTINGS.theme,
   };
 }
 
-function toDb(patch: Partial<Settings>) {
-  const result: Record<string, unknown> = {};
-  if (patch.symbols       !== undefined) result.symbols        = patch.symbols;
-  if (patch.timeframes    !== undefined) result.timeframes     = patch.timeframes;
-  if (patch.entryReasons  !== undefined) result.entry_reasons  = patch.entryReasons;
-  if (patch.exitReasons   !== undefined) result.exit_reasons   = patch.exitReasons;
-  if (patch.emotionLabels !== undefined) result.emotion_labels = patch.emotionLabels;
-  if (patch.theme         !== undefined) result.theme          = patch.theme;
-  return result;
+function toDb(s: Settings) {
+  return {
+    id:            1,
+    symbols:       s.symbols,
+    timeframes:    s.timeframes,
+    entry_reasons: s.entryReasons,
+    exit_reasons:  s.exitReasons,
+    emotion_labels: s.emotionLabels,
+    theme:         s.theme,
+  };
 }
 
 const SettingsContext = createContext<{
@@ -54,10 +52,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
 
   useEffect(() => {
-    // Apply cached settings immediately before Supabase responds
     const cached = loadLocal();
-    if (cached) setSettings(cached);
 
+    // Load from Supabase; only use it if localStorage is empty (first device ever)
     supabase
       .from("settings")
       .select("*")
@@ -66,10 +63,17 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       .then(({ data, error }) => {
         if (!error && data) {
           const fetched = fromDb(data);
-          setSettings(fetched);
-          saveLocal(fetched); // keep localStorage in sync with Supabase
+          if (!cached) {
+            // First time on this device: trust Supabase
+            setSettings(fetched);
+            saveLocal(fetched);
+          }
+          // If localStorage has data, don't overwrite it with potentially stale Supabase data
         }
       });
+
+    // Use localStorage immediately (fast path)
+    if (cached) setSettings(cached);
   }, []);
 
   // Apply theme to DOM whenever it changes
@@ -80,10 +84,11 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const update = useCallback((patch: Partial<Settings>) => {
     setSettings((prev) => {
       const next = { ...prev, ...patch };
-      saveLocal(next); // persist all settings locally immediately
+      saveLocal(next);
+      // Upsert full settings (creates row if missing, updates if exists)
+      supabase.from("settings").upsert(toDb(next));
       return next;
     });
-    supabase.from("settings").update(toDb(patch)).eq("id", 1);
   }, []);
 
   return (
