@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useSettings } from "@/hooks/useSettings";
-import { DEFAULT_SETTINGS } from "@/types/settings";
+import { DEFAULT_SETTINGS, THEMES, ThemeName } from "@/types/settings";
 
 function ListSection({
   title,
@@ -109,6 +109,34 @@ export default function SettingsPage() {
         </Link>
         <h1 style={{ fontSize: 14, color: "var(--text)" }}>⚙ SETTINGS</h1>
       </header>
+
+      {/* COLOR THEME */}
+      <div className="pixel-box p-4" style={{ marginBottom: 12 }}>
+        <p style={{ fontSize: 8, color: "var(--accent)", marginBottom: 12 }}>► COLOR THEME</p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          {(Object.entries(THEMES) as [ThemeName, typeof THEMES[ThemeName]][]).map(([name, t]) => {
+            const active = (settings.theme ?? "green") === name;
+            return (
+              <button
+                key={name}
+                onClick={() => update({ theme: name })}
+                style={{
+                  padding: "8px 14px",
+                  border: `2px solid ${t.accent}`,
+                  background: active ? t.accent : "transparent",
+                  color: active ? "#000" : t.accent,
+                  fontFamily: "var(--font-pixel), monospace",
+                  fontSize: 8,
+                  cursor: "pointer",
+                  boxShadow: active ? `2px 2px 0 ${t.accent2}` : "none",
+                }}
+              >
+                {t.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       {/* SYMBOLS */}
       <ListSection

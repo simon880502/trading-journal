@@ -6,6 +6,7 @@
   --border:   #2a2a2a;
   --accent:   #00ff88;
   --accent2:  #00cc6a;
+  --shadow:   #003322;
   --muted:    #555555;
   --text:     #eeeeee;
   --red:      #ff4444;
@@ -67,7 +68,7 @@ body::after {
   color: var(--accent);
   box-shadow:
     2px 2px 0 var(--accent2),
-    4px 4px 0 #003322;
+    4px 4px 0 var(--shadow);
 }
 
 .pixel-btn:hover {
@@ -75,7 +76,7 @@ body::after {
   color: #000;
   box-shadow:
     2px 2px 0 var(--accent2),
-    4px 4px 0 #003322;
+    4px 4px 0 var(--shadow);
 }
 
 .pixel-btn:active {
@@ -90,7 +91,7 @@ body::after {
   border: 2px solid var(--accent2);
   box-shadow:
     2px 2px 0 var(--accent2),
-    4px 4px 0 #003322;
+    4px 4px 0 var(--shadow);
 }
 
 .pixel-btn-filled:hover {

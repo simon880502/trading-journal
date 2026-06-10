@@ -1,17 +1,19 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Settings, DEFAULT_SETTINGS } from "@/types/settings";
+import { Settings, DEFAULT_SETTINGS, THEMES, ThemeName } from "@/types/settings";
 import { supabase } from "@/lib/supabase";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function fromDb(row: any): Settings {
+  const theme = (row.theme && row.theme in THEMES ? row.theme : DEFAULT_SETTINGS.theme) as ThemeName;
   return {
     symbols:       row.symbols        ?? DEFAULT_SETTINGS.symbols,
     timeframes:    row.timeframes     ?? DEFAULT_SETTINGS.timeframes,
     entryReasons:  row.entry_reasons  ?? DEFAULT_SETTINGS.entryReasons,
     exitReasons:   row.exit_reasons   ?? DEFAULT_SETTINGS.exitReasons,
     emotionLabels: row.emotion_labels ?? DEFAULT_SETTINGS.emotionLabels,
+    theme,
   };
 }
 
@@ -22,6 +24,7 @@ function toDb(patch: Partial<Settings>) {
   if (patch.entryReasons  !== undefined) result.entry_reasons  = patch.entryReasons;
   if (patch.exitReasons   !== undefined) result.exit_reasons   = patch.exitReasons;
   if (patch.emotionLabels !== undefined) result.emotion_labels = patch.emotionLabels;
+  if (patch.theme         !== undefined) result.theme          = patch.theme;
   return result;
 }
 
