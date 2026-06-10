@@ -31,7 +31,7 @@ function exportCsv(trades: Trade[]) {
 }
 
 export default function Home() {
-  const { trades, add, update, remove, totalPnl, winRate, streak } = useTrades();
+  const { trades, loading, add, update, remove, totalPnl, winRate, streak } = useTrades();
   const { settings } = useSettings();
   const [modal, setModal] = useState<{ open: boolean; trade?: Trade }>({ open: false });
 
@@ -102,7 +102,11 @@ export default function Home() {
       <div className="pixel-box p-4">
         <p style={{ fontSize: 8, color: "var(--text)", marginBottom: 14 }}>► TRADE LOG</p>
 
-        {trades.length === 0 ? (
+        {loading ? (
+          <p className="blink" style={{ fontSize: 8, color: "var(--muted)", textAlign: "center", padding: "24px 0" }}>
+            LOADING...
+          </p>
+        ) : trades.length === 0 ? (
           <p style={{ fontSize: 8, color: "var(--muted)", textAlign: "center", padding: "24px 0" }}>
             NO TRADES YET — HIT + NEW TRADE
           </p>
