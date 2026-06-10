@@ -14,14 +14,13 @@ function getLocalTheme(): ThemeName {
   return DEFAULT_SETTINGS.theme;
 }
 
+// Only sets the DOM attribute — does NOT touch localStorage
 function applyTheme(theme: ThemeName) {
   document.documentElement.setAttribute("data-theme", theme);
-  try { localStorage.setItem(THEME_LS_KEY, theme); } catch {}
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function fromDb(row: any): Settings {
-  // If DB has no theme column (null), fall back to localStorage cache
   const dbTheme = row.theme && row.theme in THEMES ? (row.theme as ThemeName) : null;
   return {
     symbols:       row.symbols        ?? DEFAULT_SETTINGS.symbols,
@@ -48,7 +47,7 @@ export function useSettings() {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
 
   useEffect(() => {
-    // Update state from localStorage — the theme effect below handles the actual DOM apply
+    // Read localStorage and update state (theme effect below handles DOM apply)
     const localTheme = getLocalTheme();
     if (localTheme !== DEFAULT_SETTINGS.theme) {
       setSettings((prev) => ({ ...prev, theme: localTheme }));
@@ -64,12 +63,16 @@ export function useSettings() {
       });
   }, []);
 
-  // Single place that applies theme to DOM — runs whenever settings.theme changes
+  // Apply theme to DOM on every theme change (does NOT write localStorage)
   useEffect(() => {
     applyTheme(settings.theme);
   }, [settings.theme]);
 
   const update = useCallback((patch: Partial<Settings>) => {
+    // Persist theme to localStorage only when user explicitly changes it
+    if (patch.theme) {
+      try { localStorage.setItem(THEME_LS_KEY, patch.theme); } catch {}
+    }
     setSettings((prev) => ({ ...prev, ...patch }));
     supabase.from("settings").update(toDb(patch)).eq("id", 1);
   }, []);
