@@ -140,7 +140,7 @@ export default function Home() {
                       <td style={{ color: "var(--muted)" }}>{t.date}</td>
                       <td style={{ color: "var(--accent)", fontSize: 7 }}>{t.timeframe ?? "—"}</td>
                       <td style={{ color: "var(--text)" }}>{t.symbol}</td>
-                      <td style={{ color: t.side === "BUY" ? "var(--accent)" : "var(--red)" }}>
+                      <td style={{ color: t.side === "BUY" ? "var(--buy)" : "var(--red)" }}>
                         {t.side === "BUY" ? "▲" : "▼"} {t.side}
                       </td>
                       <td style={{ textAlign: "right", color: "var(--muted)" }}>

@@ -10,6 +10,8 @@
   --muted:    #555555;
   --text:     #eeeeee;
   --red:      #ff4444;
+  --buy:      #00ff88;
+  --buy2:     #00cc6a;
 }
 
 html[data-theme="cyan"]   { --accent: #00ffff; --accent2: #00cccc; --shadow: #003333; }

@@ -249,9 +249,9 @@ export function TradeModal({ onClose, onSave, initial, settings }: Props) {
                     form.side === s
                       ? {
                           flex: 1,
-                          background: s === "BUY" ? "var(--accent)" : "var(--red)",
+                          background: s === "BUY" ? "var(--buy)" : "var(--red)",
                           color: "#000",
-                          borderColor: s === "BUY" ? "var(--accent2)" : "#aa0000",
+                          borderColor: s === "BUY" ? "var(--buy2)" : "#aa0000",
                           fontSize: 8,
                         }
                       : { flex: 1, fontSize: 8 }
