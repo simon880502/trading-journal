@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import { Settings, DEFAULT_SETTINGS, THEMES, ThemeName } from "@/types/settings";
 import { supabase } from "@/lib/supabase";
 
+const THEME_LS_KEY = "tj_theme";
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function fromDb(row: any): Settings {
   const theme = (row.theme && row.theme in THEMES ? row.theme : DEFAULT_SETTINGS.theme) as ThemeName;
@@ -28,8 +30,27 @@ function toDb(patch: Partial<Settings>) {
   return result;
 }
 
+function cachedTheme(): ThemeName {
+  try {
+    const v = localStorage.getItem(THEME_LS_KEY);
+    if (v && v in THEMES) return v as ThemeName;
+  } catch {}
+  return DEFAULT_SETTINGS.theme;
+}
+
 export function useSettings() {
-  const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
+  const [settings, setSettings] = useState<Settings>({
+    ...DEFAULT_SETTINGS,
+    theme: DEFAULT_SETTINGS.theme,
+  });
+
+  // Load cached theme immediately on mount (before Supabase responds)
+  useEffect(() => {
+    const t = cachedTheme();
+    if (t !== DEFAULT_SETTINGS.theme) {
+      setSettings((prev) => ({ ...prev, theme: t }));
+    }
+  }, []);
 
   useEffect(() => {
     supabase
@@ -42,13 +63,14 @@ export function useSettings() {
       });
   }, []);
 
-  // Apply theme CSS vars whenever theme changes
+  // Apply CSS vars + persist to localStorage whenever theme changes
   useEffect(() => {
     const t = THEMES[settings.theme] ?? THEMES.green;
     const root = document.documentElement;
     root.style.setProperty("--accent",  t.accent);
     root.style.setProperty("--accent2", t.accent2);
     root.style.setProperty("--shadow",  t.shadow);
+    try { localStorage.setItem(THEME_LS_KEY, settings.theme); } catch {}
   }, [settings.theme]);
 
   const update = useCallback((patch: Partial<Settings>) => {
