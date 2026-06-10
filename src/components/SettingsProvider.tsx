@@ -4,14 +4,21 @@ import { createContext, useContext, useState, useEffect, useCallback } from "rea
 import { Settings, DEFAULT_SETTINGS, THEMES, ThemeName } from "@/types/settings";
 import { supabase } from "@/lib/supabase";
 
-const THEME_LS_KEY = "tj_theme";
+const LS_KEY = "tj_settings";
 
-function getLocalTheme(): ThemeName {
+function saveLocal(s: Settings) {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(s)); } catch {}
+}
+
+function loadLocal(): Settings | null {
   try {
-    const v = localStorage.getItem(THEME_LS_KEY);
-    if (v && v in THEMES) return v as ThemeName;
+    const v = localStorage.getItem(LS_KEY);
+    if (v) {
+      const parsed = JSON.parse(v) as Partial<Settings>;
+      return { ...DEFAULT_SETTINGS, ...parsed };
+    }
   } catch {}
-  return DEFAULT_SETTINGS.theme;
+  return null;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -23,7 +30,7 @@ function fromDb(row: any): Settings {
     entryReasons:  row.entry_reasons  ?? DEFAULT_SETTINGS.entryReasons,
     exitReasons:   row.exit_reasons   ?? DEFAULT_SETTINGS.exitReasons,
     emotionLabels: row.emotion_labels ?? DEFAULT_SETTINGS.emotionLabels,
-    theme:         dbTheme ?? getLocalTheme(),
+    theme:         dbTheme ?? loadLocal()?.theme ?? DEFAULT_SETTINGS.theme,
   };
 }
 
@@ -47,11 +54,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
 
   useEffect(() => {
-    // Apply cached theme before Supabase responds
-    const localTheme = getLocalTheme();
-    if (localTheme !== DEFAULT_SETTINGS.theme) {
-      setSettings((prev) => ({ ...prev, theme: localTheme }));
-    }
+    // Apply cached settings immediately before Supabase responds
+    const cached = loadLocal();
+    if (cached) setSettings(cached);
 
     supabase
       .from("settings")
@@ -59,7 +64,11 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       .eq("id", 1)
       .single()
       .then(({ data, error }) => {
-        if (!error && data) setSettings(fromDb(data));
+        if (!error && data) {
+          const fetched = fromDb(data);
+          setSettings(fetched);
+          saveLocal(fetched); // keep localStorage in sync with Supabase
+        }
       });
   }, []);
 
@@ -69,10 +78,11 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   }, [settings.theme]);
 
   const update = useCallback((patch: Partial<Settings>) => {
-    if (patch.theme) {
-      try { localStorage.setItem(THEME_LS_KEY, patch.theme); } catch {}
-    }
-    setSettings((prev) => ({ ...prev, ...patch }));
+    setSettings((prev) => {
+      const next = { ...prev, ...patch };
+      saveLocal(next); // persist all settings locally immediately
+      return next;
+    });
     supabase.from("settings").update(toDb(patch)).eq("id", 1);
   }, []);
 
