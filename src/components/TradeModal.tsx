@@ -17,6 +17,8 @@ type NumPadTarget = {
   label: string;
 };
 
+type PctMode = "price" | "percent";
+
 interface FormState {
   date: string;
   timeframe: string;
@@ -33,6 +35,11 @@ interface FormState {
   exitReason: string;
   emotion: number | null;
   notes: string;
+  // percentage inputs
+  slPct: string;
+  tpPct: string;
+  tp2Pct: string;
+  tp3Pct: string;
 }
 
 const today = new Date().toISOString().slice(0, 10);
@@ -62,47 +69,81 @@ function initForm(t?: Trade): FormState {
     exitReason:   t?.exitReason               ?? "",
     emotion:      t?.emotion                   ?? null,
     notes:        t?.notes                     ?? "",
+    slPct:        "",
+    tpPct:        "",
+    tp2Pct:       "",
+    tp3Pct:       "",
   };
 }
 
-// Small helper: price row with numpad trigger
+// Helper: compute price from percentage
+function pctToPrice(entry: string, pct: string, side: "BUY" | "SELL", direction: "sl" | "tp"): string {
+  const e = parseFloat(entry);
+  const p = parseFloat(pct);
+  if (!e || !p || isNaN(e) || isNaN(p)) return "";
+  const multiplier = (direction === "sl")
+    ? (side === "BUY" ? 1 - p / 100 : 1 + p / 100)
+    : (side === "BUY" ? 1 + p / 100 : 1 - p / 100);
+  return (e * multiplier).toFixed(4).replace(/\.?0+$/, "");
+}
+
+// Small helper: price row with numpad trigger + % mode toggle
 function PriceRow({
   label,
   field,
+  pctField,
+  pctDir,
   form,
   set,
   openPad,
   optional,
+  pctMode,
 }: {
   label: string;
   field: keyof FormState;
+  pctField?: keyof FormState;
+  pctDir?: "sl" | "tp";
   form: FormState;
   set: (k: keyof FormState, v: string) => void;
   openPad: (t: NumPadTarget) => void;
   optional?: boolean;
+  pctMode?: PctMode;
 }) {
+  const showPct = pctMode === "percent" && pctField && pctDir;
+  const activeField = showPct ? pctField! : field;
+  const computedPrice = showPct
+    ? pctToPrice(form.entry, form[pctField!] as string, form.side, pctDir!)
+    : null;
+
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-      <span style={{ fontSize: 8, color: "var(--muted)", width: 52, flexShrink: 0 }}>{label}</span>
-      <input
-        type="number"
-        className="pixel-input"
-        style={{ flex: 1, marginBottom: 0 }}
-        value={form[field] as string}
-        onChange={(e) => set(field, e.target.value)}
-        placeholder={optional ? "optional" : "0.00"}
-        step="0.01"
-        min="0"
-      />
-      <button
-        type="button"
-        className="pixel-btn"
-        onClick={() => openPad({ key: field, label })}
-        style={{ padding: "6px 10px", fontSize: 10, flexShrink: 0 }}
-        title="Open Numpad"
-      >
-        #
-      </button>
+    <div style={{ marginBottom: 6 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <span style={{ fontSize: 8, color: "var(--muted)", width: 52, flexShrink: 0 }}>{label}</span>
+        <input
+          type="number"
+          className="pixel-input"
+          style={{ flex: 1, marginBottom: 0 }}
+          value={form[activeField] as string}
+          onChange={(e) => set(activeField, e.target.value)}
+          placeholder={showPct ? "0.00 %" : (optional ? "optional" : "0.00")}
+          step={showPct ? "0.01" : "0.01"}
+          min="0"
+        />
+        <button
+          type="button"
+          className="pixel-btn"
+          onClick={() => openPad({ key: activeField, label: showPct ? label + " %" : label })}
+          style={{ padding: "6px 10px", fontSize: 10, flexShrink: 0 }}
+          title="Open Numpad"
+        >
+          #
+        </button>
+      </div>
+      {showPct && computedPrice && (
+        <div style={{ paddingLeft: 58, marginTop: 2 }}>
+          <span style={{ fontSize: 7, color: "var(--accent)" }}>= {computedPrice}</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -120,6 +161,7 @@ export function TradeModal({ onClose, onSave, initial, settings }: Props) {
   const [form, setForm] = useState<FormState>(() => initForm(initial));
   const [numpad, setNumpad] = useState<NumPadTarget | null>(null);
   const [error, setError] = useState("");
+  const [pctMode, setPctMode] = useState<PctMode>("price");
 
   function set(k: keyof FormState, v: string | number | string[] | null) {
     setForm((p) => ({ ...p, [k]: v }));
@@ -148,18 +190,34 @@ export function TradeModal({ onClose, onSave, initial, settings }: Props) {
   // Live risk ratio (based on TP1)
   const rr = useMemo(() => {
     const entry = parseFloat(form.entry);
-    const sl    = parseFloat(form.sl);
-    const tp    = parseFloat(form.tp);
-    if (!entry || !sl || !tp) return null;
-    return tradeRR(entry, sl, tp);
-  }, [form.entry, form.sl, form.tp]);
+    const slVal = pctMode === "percent"
+      ? parseFloat(pctToPrice(form.entry, form.slPct, form.side, "sl"))
+      : parseFloat(form.sl);
+    const tpVal = pctMode === "percent"
+      ? parseFloat(pctToPrice(form.entry, form.tpPct, form.side, "tp"))
+      : parseFloat(form.tp);
+    if (!entry || !slVal || !tpVal) return null;
+    return tradeRR(entry, slVal, tpVal);
+  }, [form.entry, form.sl, form.tp, form.slPct, form.tpPct, form.side, pctMode]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.symbol)               { setError("SELECT A SYMBOL");        return; }
     if (!form.date)                  { setError("DATE IS REQUIRED");       return; }
     const entry        = parseFloat(form.entry);
-    const sl           = parseFloat(form.sl);
+    const isPct = pctMode === "percent";
+    const sl = isPct
+      ? parseFloat(pctToPrice(form.entry, form.slPct, form.side, "sl"))
+      : parseFloat(form.sl);
+    const tp = isPct
+      ? parseFloat(pctToPrice(form.entry, form.tpPct, form.side, "tp"))
+      : parseFloat(form.tp);
+    const tp2 = isPct
+      ? parseFloat(pctToPrice(form.entry, form.tp2Pct, form.side, "tp"))
+      : parseFloat(form.tp2);
+    const tp3 = isPct
+      ? parseFloat(pctToPrice(form.entry, form.tp3Pct, form.side, "tp"))
+      : parseFloat(form.tp3);
     const positionSize = parseFloat(form.positionSize);
     if (isNaN(entry) || entry <= 0)            { setError("INVALID ENTRY");         return; }
     if (isNaN(sl)    || sl    <= 0)            { setError("INVALID SL");            return; }
@@ -171,9 +229,9 @@ export function TradeModal({ onClose, onSave, initial, settings }: Props) {
       side:         form.side,
       entry,
       sl,
-      tp:           parseFloat(form.tp)    || undefined,
-      tp2:          parseFloat(form.tp2)   || undefined,
-      tp3:          parseFloat(form.tp3)   || undefined,
+      tp:           tp    || undefined,
+      tp2:          tp2   || undefined,
+      tp3:          tp3   || undefined,
       timeframe:    form.timeframe || undefined,
       exitPrice:    parseFloat(form.exitPrice) || undefined,
       positionSize,
@@ -293,11 +351,37 @@ export function TradeModal({ onClose, onSave, initial, settings }: Props) {
 
             {/* ── PRICE LEVELS ── */}
             <Section title="PRICE LEVELS" />
+            {/* Mode toggle */}
+            <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+              {(["price", "percent"] as PctMode[]).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  className="pixel-btn"
+                  onClick={() => setPctMode(m)}
+                  style={
+                    pctMode === m
+                      ? { flex: 1, background: "var(--accent)", color: "#000", borderColor: "var(--accent2)", fontSize: 8 }
+                      : { flex: 1, fontSize: 8 }
+                  }
+                >
+                  {m === "price" ? "$ PRICE" : "% PERCENT"}
+                </button>
+              ))}
+            </div>
             <PriceRow label="ENTRY $"  field="entry" form={form} set={set} openPad={setNumpad} />
-            <PriceRow label="SL $"     field="sl"    form={form} set={set} openPad={setNumpad} />
-            <PriceRow label="TP1 $"    field="tp"    form={form} set={set} openPad={setNumpad} optional />
-            <PriceRow label="TP2 $"    field="tp2"   form={form} set={set} openPad={setNumpad} optional />
-            <PriceRow label="TP3 $"    field="tp3"   form={form} set={set} openPad={setNumpad} optional />
+            <PriceRow label={pctMode === "percent" ? "SL %" : "SL $"}
+              field="sl" pctField="slPct" pctDir="sl"
+              form={form} set={set} openPad={setNumpad} pctMode={pctMode} />
+            <PriceRow label={pctMode === "percent" ? "TP1 %" : "TP1 $"}
+              field="tp" pctField="tpPct" pctDir="tp"
+              form={form} set={set} openPad={setNumpad} optional pctMode={pctMode} />
+            <PriceRow label={pctMode === "percent" ? "TP2 %" : "TP2 $"}
+              field="tp2" pctField="tp2Pct" pctDir="tp"
+              form={form} set={set} openPad={setNumpad} optional pctMode={pctMode} />
+            <PriceRow label={pctMode === "percent" ? "TP3 %" : "TP3 $"}
+              field="tp3" pctField="tp3Pct" pctDir="tp"
+              form={form} set={set} openPad={setNumpad} optional pctMode={pctMode} />
 
             {/* Risk Ratio */}
             <div
