@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSettings } from "@/components/SettingsProvider";
+import { useTrades } from "@/hooks/useTrades";
+import { Trade } from "@/types/trade";
 import { DEFAULT_SETTINGS, THEMES, ThemeName } from "@/types/settings";
 
 function ListSection({
@@ -71,6 +73,140 @@ function ListSection({
           + ADD
         </button>
       </div>
+    </div>
+  );
+}
+
+
+// ── Trash Section ────────────────────────────────────────────
+function TrashSection() {
+  const { fetchTrashed, restore, purge } = useTrades();
+  const [trashed, setTrashed] = useState<Trade[]>([]);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const data = await fetchTrashed();
+    setTrashed(data);
+    setLoading(false);
+  }, [fetchTrashed]);
+
+  useEffect(() => {
+    if (open) load();
+  }, [open, load]);
+
+  async function handleRestore(id: string) {
+    await restore(id);
+    setTrashed((prev) => prev.filter((t) => t.id !== id));
+  }
+
+  async function handlePurge(id: string) {
+    if (!confirm("Permanently delete this trade? This cannot be undone.")) return;
+    await purge(id);
+    setTrashed((prev) => prev.filter((t) => t.id !== id));
+  }
+
+  async function handlePurgeAll() {
+    if (!confirm(`Permanently delete all ${trashed.length} trashed trades? This cannot be undone.`)) return;
+    await Promise.all(trashed.map((t) => purge(t.id)));
+    setTrashed([]);
+  }
+
+  return (
+    <div className="pixel-box p-4" style={{ marginBottom: 12 }}>
+      {/* Header row */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: open ? 12 : 0 }}>
+        <p style={{ fontSize: 8, color: "var(--accent)" }}>
+          🗑 TRASH {trashed.length > 0 && open ? `(${trashed.length})` : ""}
+        </p>
+        <button
+          onClick={() => setOpen((v) => !v)}
+          className="pixel-btn"
+          style={{ fontSize: 8, padding: "4px 8px" }}
+        >
+          {open ? "▲ HIDE" : "▼ SHOW"}
+        </button>
+      </div>
+
+      {open && (
+        <>
+          {loading && (
+            <p style={{ fontSize: 8, color: "var(--muted)", marginBottom: 8 }}>LOADING...</p>
+          )}
+
+          {!loading && trashed.length === 0 && (
+            <p style={{ fontSize: 8, color: "var(--muted)" }}>TRASH IS EMPTY</p>
+          )}
+
+          {!loading && trashed.length > 0 && (
+            <>
+              {/* Empty trash button */}
+              <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 10 }}>
+                <button
+                  onClick={handlePurgeAll}
+                  className="pixel-btn pixel-btn-danger"
+                  style={{ fontSize: 7, padding: "4px 8px" }}
+                >
+                  ✕ EMPTY TRASH
+                </button>
+              </div>
+
+              {/* Trade list */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {trashed.map((t) => (
+                  <div
+                    key={t.id}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      border: "1px solid var(--border)",
+                      padding: "6px 8px",
+                    }}
+                  >
+                    {/* Trade info */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ fontSize: 8, color: "var(--text)" }}>
+                        {t.date} · {t.symbol} ·{" "}
+                        <span style={{ color: t.side === "BUY" ? "var(--buy)" : "var(--red)" }}>
+                          {t.side}
+                        </span>
+                        {" "}@ {t.entry}
+                      </span>
+                      {t.deletedAt && (
+                        <p style={{ fontSize: 7, color: "var(--muted)", marginTop: 2 }}>
+                          deleted {new Date(t.deletedAt).toLocaleDateString()}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Restore */}
+                    <button
+                      onClick={() => handleRestore(t.id)}
+                      className="pixel-btn"
+                      style={{ fontSize: 7, padding: "4px 7px", flexShrink: 0 }}
+                      title="Restore"
+                    >
+                      ↺ RESTORE
+                    </button>
+
+                    {/* Purge */}
+                    <button
+                      onClick={() => handlePurge(t.id)}
+                      className="pixel-btn pixel-btn-danger"
+                      style={{ fontSize: 7, padding: "4px 7px", flexShrink: 0 }}
+                      title="Delete permanently"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </>
+      )}
     </div>
   );
 }
@@ -195,6 +331,9 @@ export default function SettingsPage() {
           ))}
         </div>
       </div>
+
+      {/* Trash */}
+      <TrashSection />
 
       {/* Reset */}
       <div style={{ display: "flex", justifyContent: "flex-end" }}>

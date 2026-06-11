@@ -15,6 +15,7 @@ export interface Trade {
   exitReason?: string;
   emotion?: number;      // 1-5
   notes?: string;
+  deletedAt?: string;  // ISO string; present = soft-deleted
 }
 
 export function tradePnl(t: Trade): number | null {

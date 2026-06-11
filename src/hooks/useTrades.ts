@@ -24,6 +24,7 @@ function fromDb(row: any): Trade {
     exitReason:   row.exit_reason  ?? undefined,
     emotion:      row.emotion      ?? undefined,
     notes:        row.notes        ?? undefined,
+    deletedAt:    row.deleted_at   ?? undefined,
   };
 }
 
@@ -59,6 +60,7 @@ export function useTrades() {
     supabase
       .from("trades")
       .select("*")
+      .is("deleted_at", null)
       .order("date", { ascending: false })
       .then(({ data, error }) => {
         if (!error && data) setTrades(data.map(fromDb));
@@ -95,6 +97,28 @@ export function useTrades() {
 
   const remove = useCallback(async (id: string) => {
     setTrades((prev) => prev.filter((t) => t.id !== id));
+    const now = new Date().toISOString();
+    await supabase.from("trades").update({ deleted_at: now }).eq("id", id);
+  }, []);
+
+  // Fetch soft-deleted trades
+  const fetchTrashed = useCallback(async (): Promise<Trade[]> => {
+    const { data, error } = await supabase
+      .from("trades")
+      .select("*")
+      .not("deleted_at", "is", null)
+      .order("deleted_at", { ascending: false });
+    if (error || !data) return [];
+    return data.map(fromDb);
+  }, []);
+
+  // Restore a trashed trade
+  const restore = useCallback(async (id: string) => {
+    await supabase.from("trades").update({ deleted_at: null }).eq("id", id);
+  }, []);
+
+  // Permanently delete a trade
+  const purge = useCallback(async (id: string) => {
     await supabase.from("trades").delete().eq("id", id);
   }, []);
 
@@ -115,5 +139,5 @@ export function useTrades() {
     return { count, type: firstType };
   })();
 
-  return { trades, loading, add, update, remove, totalPnl, winRate, streak };
+  return { trades, loading, add, update, remove, fetchTrashed, restore, purge, totalPnl, winRate, streak };
 }
