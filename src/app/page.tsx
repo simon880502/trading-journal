@@ -164,20 +164,15 @@ export default function Home() {
           <div style={{ overflowX: "auto" }}>
             <table
               className="pixel-table"
-              style={{ fontSize: 8, borderCollapse: "collapse", width: "100%", minWidth: 520 }}
+              style={{ fontSize: 8, borderCollapse: "collapse", width: "100%" }}
             >
               <thead>
                 <tr>
                   <th style={{ textAlign: "center" }}></th>
-                  <th style={{ textAlign: "left"  }}>DATE</th>
-                  <th style={{ textAlign: "left"  }}>TF</th>
                   <th style={{ textAlign: "left"  }}>SYMBOL</th>
                   <th style={{ textAlign: "left"  }}>SIDE</th>
-                  <th style={{ textAlign: "right" }}>ENTRY</th>
-                  <th style={{ textAlign: "right" }}>EXIT</th>
                   <th style={{ textAlign: "right" }}>P&L</th>
                   <th style={{ textAlign: "right" }}>%</th>
-                  <th style={{ textAlign: "center" }}>EMO</th>
                 </tr>
               </thead>
               <tbody>
@@ -196,30 +191,15 @@ export default function Home() {
                           ✎
                         </button>
                       </td>
-                      <td style={{ color: "var(--muted)" }}>{t.date}</td>
-                      <td style={{ color: "var(--accent)", fontSize: 7 }}>{t.timeframe ?? "—"}</td>
-                      <td style={{ color: "var(--text)" }}>{t.symbol}</td>
+                      <td style={{ color: "var(--text)", fontWeight: "bold" }}>{t.symbol}</td>
                       <td style={{ color: t.side === "BUY" ? "var(--buy)" : "var(--red)" }}>
                         {t.side === "BUY" ? "▲" : "▼"} {t.side}
                       </td>
-                      <td style={{ textAlign: "right", color: "var(--muted)" }}>
-                        {t.entry.toLocaleString()}
-                      </td>
-                      <td style={{ textAlign: "right" }}>
-                        {isOpen ? (
-                          <span className="blink" style={{ color: "var(--accent)" }}>OPEN</span>
-                        ) : (
-                          <span style={{ color: "var(--muted)" }}>{t.exitPrice!.toLocaleString()}</span>
-                        )}
-                      </td>
                       <td style={{ textAlign: "right", color: pnl == null ? "var(--border)" : pnl >= 0 ? "var(--accent)" : "var(--red)" }}>
-                        {pnl == null ? "—" : `${pnl >= 0 ? "+" : ""}$${Math.abs(pnl).toFixed(2)}`}
+                        {pnl == null ? (isOpen ? <span className="blink" style={{ color: "var(--accent)", fontSize: 7 }}>OPEN</span> : "—") : `${pnl >= 0 ? "+" : ""}$${Math.abs(pnl).toFixed(2)}`}
                       </td>
                       <td style={{ textAlign: "right", color: pct == null ? "var(--border)" : pct >= 0 ? "var(--accent)" : "var(--red)" }}>
                         {pct == null ? "—" : `${pct >= 0 ? "+" : ""}${pct.toFixed(1)}%`}
-                      </td>
-                      <td style={{ textAlign: "center", color: "var(--accent)" }}>
-                        {t.emotion ?? "—"}
                       </td>
 
                     </tr>
@@ -263,7 +243,9 @@ export default function Home() {
           onSave={(t) => {
             if (modal.trade) update(modal.trade.id, t);
             else add({ ...t, mode });
+            setModal({ open: false });
           }}
+          onDelete={(id) => { remove(id); setModal({ open: false }); }}
         />
       )}
     </div>

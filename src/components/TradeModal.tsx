@@ -8,6 +8,7 @@ import { NumPad } from "@/components/NumPad";
 interface Props {
   onClose: () => void;
   onSave: (trade: Omit<Trade, "id">) => void;
+  onDelete?: (id: string) => void;
   initial?: Trade;
   settings: Settings;
   mode: TradeMode;
@@ -158,7 +159,7 @@ function Section({ title }: { title: string }) {
   );
 }
 
-export function TradeModal({ onClose, onSave, initial, settings, mode }: Props) {
+export function TradeModal({ onClose, onSave, onDelete, initial, settings, mode }: Props) {
   const [form, setForm] = useState<FormState>(() => initForm(initial));
   const [numpad, setNumpad] = useState<NumPadTarget | null>(null);
   const [error, setError] = useState("");
@@ -506,6 +507,13 @@ export function TradeModal({ onClose, onSave, initial, settings, mode }: Props) 
               onClick={handleSubmit as unknown as React.MouseEventHandler}>
               SAVE ►
             </button>
+            {initial && onDelete && (
+              <button type="button" className="pixel-btn pixel-btn-danger"
+                style={{ fontSize: 14, padding: "14px 16px", letterSpacing: 2 }}
+                onClick={() => { onDelete(initial.id); onClose(); }}>
+                DEL
+              </button>
+            )}
             <button type="button" className="pixel-btn" onClick={onClose}
               style={{ flex: 1, fontSize: 14, padding: "14px 0", letterSpacing: 2 }}>
               CANCEL
