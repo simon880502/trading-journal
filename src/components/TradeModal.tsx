@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Trade, tradeRR } from "@/types/trade";
+import { Trade, TradeMode, tradeRR } from "@/types/trade";
 import { Settings } from "@/types/settings";
 import { NumPad } from "@/components/NumPad";
 
@@ -10,6 +10,7 @@ interface Props {
   onSave: (trade: Omit<Trade, "id">) => void;
   initial?: Trade;
   settings: Settings;
+  mode: TradeMode;
 }
 
 type NumPadTarget = {
@@ -157,7 +158,7 @@ function Section({ title }: { title: string }) {
   );
 }
 
-export function TradeModal({ onClose, onSave, initial, settings }: Props) {
+export function TradeModal({ onClose, onSave, initial, settings, mode }: Props) {
   const [form, setForm] = useState<FormState>(() => initForm(initial));
   const [numpad, setNumpad] = useState<NumPadTarget | null>(null);
   const [error, setError] = useState("");
@@ -239,6 +240,7 @@ export function TradeModal({ onClose, onSave, initial, settings }: Props) {
       exitReason:   form.exitReason || undefined,
       emotion:      form.emotion ?? undefined,
       notes:        form.notes.trim() || undefined,
+      mode:         initial?.mode ?? mode,
     });
     onClose();
   }

@@ -264,6 +264,7 @@ export default function Home() {
         <TradeModal
           initial={modal.trade}
           settings={settings}
+          mode={mode}
           onClose={() => setModal({ open: false })}
           onSave={(t) => {
             if (modal.trade) update(modal.trade.id, t);
