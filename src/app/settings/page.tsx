@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, useEffect, useCallback } from "react";
 import { useSettings } from "@/components/SettingsProvider";
 import { useTrades } from "@/hooks/useTrades";
-import { Trade } from "@/types/trade";
+import { Trade, TradeMode } from "@/types/trade";
 import { DEFAULT_SETTINGS, THEMES, ThemeName } from "@/types/settings";
 
 function ListSection({
@@ -214,6 +214,16 @@ function TrashSection() {
 export default function SettingsPage() {
   const { settings, update } = useSettings();
 
+  const [mode, setModeState] = useState<TradeMode>("real");
+  useEffect(() => {
+    const saved = localStorage.getItem("trade_mode") as TradeMode | null;
+    if (saved === "real" || saved === "sim") setModeState(saved);
+  }, []);
+  function setMode(m: TradeMode) {
+    setModeState(m);
+    localStorage.setItem("trade_mode", m);
+  }
+
   const [emotionLabels, setEmotionLabels] = useState<string[]>([]);
   const [emotionInit, setEmotionInit] = useState(false);
 
@@ -245,6 +255,35 @@ export default function SettingsPage() {
         </Link>
         <h1 style={{ fontSize: 14, color: "var(--text)" }}>⚙ SETTINGS</h1>
       </header>
+
+      {/* TRADING MODE */}
+      <div className="pixel-box p-4" style={{ marginBottom: 12 }}>
+        <p style={{ fontSize: 8, color: "var(--accent)", marginBottom: 12 }}>► TRADING MODE</p>
+        <div style={{ display: "flex", gap: 8 }}>
+          {(["real", "sim"] as TradeMode[]).map((m) => (
+            <button
+              key={m}
+              onClick={() => setMode(m)}
+              className="pixel-btn"
+              style={
+                mode === m
+                  ? {
+                      flex: 1, fontSize: 10, padding: "12px 0",
+                      background: m === "real" ? "var(--accent)" : "var(--red)",
+                      color: "#000",
+                      borderColor: m === "real" ? "var(--accent2)" : "#aa0000",
+                    }
+                  : { flex: 1, fontSize: 10, padding: "12px 0" }
+              }
+            >
+              {m === "real" ? "◈ REAL" : "◇ SIM"}
+            </button>
+          ))}
+        </div>
+        <p style={{ fontSize: 7, color: "var(--muted)", marginTop: 8 }}>
+          {mode === "sim" ? "◇ Simulation mode — trades are not real" : "◈ Real trading mode"}
+        </p>
+      </div>
 
       {/* COLOR THEME */}
       <div className="pixel-box p-4" style={{ marginBottom: 12 }}>
