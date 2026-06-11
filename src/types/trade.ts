@@ -1,3 +1,5 @@
+export type TradeMode = "real" | "sim";
+
 export interface Trade {
   id: string;
   date: string;
@@ -16,6 +18,7 @@ export interface Trade {
   emotion?: number;      // 1-5
   notes?: string;
   deletedAt?: string;  // ISO string; present = soft-deleted
+  mode: TradeMode;       // "real" or "sim"
 }
 
 export function tradePnl(t: Trade): number | null {

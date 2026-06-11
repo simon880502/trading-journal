@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Trade, tradePnl } from "@/types/trade";
+import { Trade, TradeMode, tradePnl } from "@/types/trade";
 import { supabase } from "@/lib/supabase";
 
 // ── DB mapping ──────────────────────────────────────────────
@@ -25,6 +25,7 @@ function fromDb(row: any): Trade {
     emotion:      row.emotion      ?? undefined,
     notes:        row.notes        ?? undefined,
     deletedAt:    row.deleted_at   ?? undefined,
+    mode:         (row.mode as TradeMode) ?? "real",
   };
 }
 
@@ -52,7 +53,7 @@ function sortDesc(trades: Trade[]): Trade[] {
   return [...trades].sort((a, b) => b.date.localeCompare(a.date));
 }
 
-export function useTrades() {
+export function useTrades(mode: TradeMode = "real") {
   const [trades, setTrades]   = useState<Trade[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -61,21 +62,23 @@ export function useTrades() {
       .from("trades")
       .select("*")
       .is("deleted_at", null)
+      .eq("mode", mode)
       .order("date", { ascending: false })
       .then(({ data, error }) => {
         if (!error && data) setTrades(data.map(fromDb));
         setLoading(false);
       });
-  }, []);
+  }, [mode]);
 
   const add = useCallback(async (t: Omit<Trade, "id">) => {
     // Optimistic: add with temp id
     const tempId = crypto.randomUUID();
-    setTrades((prev) => sortDesc([...prev, { ...t, id: tempId }]));
+    const tradeWithMode = { ...t, mode: t.mode ?? mode };
+    setTrades((prev) => sortDesc([...prev, { ...tradeWithMode, id: tempId }]));
 
     const { data, error } = await supabase
       .from("trades")
-      .insert(toDb(t))
+      .insert(toDb(tradeWithMode))
       .select()
       .single();
 
