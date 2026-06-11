@@ -164,6 +164,7 @@ export function TradeModal({ onClose, onSave, onDelete, initial, settings, mode 
   const [numpad, setNumpad] = useState<NumPadTarget | null>(null);
   const [error, setError] = useState("");
   const [pctMode, setPctMode] = useState<PctMode>("price");
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   function set(k: keyof FormState, v: string | number | string[] | null) {
     setForm((p) => ({ ...p, [k]: v }));
@@ -510,9 +511,47 @@ export function TradeModal({ onClose, onSave, onDelete, initial, settings, mode 
             {initial && onDelete && (
               <button type="button" className="pixel-btn pixel-btn-danger"
                 style={{ fontSize: 14, padding: "14px 16px", letterSpacing: 2 }}
-                onClick={() => { onDelete(initial.id); onClose(); }}>
+                onClick={() => setConfirmDelete(true)}>
                 DEL
               </button>
+            )}
+
+            {/* Confirm delete overlay */}
+            {confirmDelete && initial && onDelete && (
+              <div
+                style={{
+                  position: "fixed", inset: 0, zIndex: 80,
+                  background: "rgba(0,0,0,0.85)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  padding: 24,
+                }}
+              >
+                <div className="pixel-box p-5" style={{ width: "min(90vw, 300px)" }}>
+                  <p style={{ fontSize: 10, color: "var(--accent)", marginBottom: 8 }}>⚠ CONFIRM DELETE</p>
+                  <p style={{ fontSize: 8, color: "var(--muted)", marginBottom: 20, lineHeight: 2 }}>
+                    {initial.symbol} · {initial.side} · {initial.date}
+                    <br />This trade will move to Trash.
+                  </p>
+                  <div style={{ display: "flex", gap: 10 }}>
+                    <button
+                      type="button"
+                      className="pixel-btn pixel-btn-danger"
+                      style={{ flex: 1, fontSize: 12, padding: "14px 0" }}
+                      onClick={() => { onDelete(initial.id); onClose(); }}
+                    >
+                      ✕ DELETE
+                    </button>
+                    <button
+                      type="button"
+                      className="pixel-btn"
+                      style={{ flex: 1, fontSize: 12, padding: "14px 0" }}
+                      onClick={() => setConfirmDelete(false)}
+                    >
+                      CANCEL
+                    </button>
+                  </div>
+                </div>
+              </div>
             )}
             <button type="button" className="pixel-btn" onClick={onClose}
               style={{ flex: 1, fontSize: 14, padding: "14px 0", letterSpacing: 2 }}>
