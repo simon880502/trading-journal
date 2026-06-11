@@ -168,6 +168,7 @@ export default function Home() {
             >
               <thead>
                 <tr>
+                  <th style={{ textAlign: "center" }}></th>
                   <th style={{ textAlign: "left"  }}>DATE</th>
                   <th style={{ textAlign: "left"  }}>TF</th>
                   <th style={{ textAlign: "left"  }}>SYMBOL</th>
@@ -177,7 +178,6 @@ export default function Home() {
                   <th style={{ textAlign: "right" }}>P&L</th>
                   <th style={{ textAlign: "right" }}>%</th>
                   <th style={{ textAlign: "center" }}>EMO</th>
-                  <th style={{ textAlign: "right" }}></th>
                 </tr>
               </thead>
               <tbody>
@@ -187,6 +187,15 @@ export default function Home() {
                   const isOpen = t.exitPrice == null;
                   return (
                     <tr key={t.id}>
+                      <td style={{ textAlign: "center", whiteSpace: "nowrap" }}>
+                        <button
+                          className="pixel-btn"
+                          onClick={() => setModal({ open: true, trade: t })}
+                          style={{ fontSize: 8, padding: "4px 8px" }}
+                        >
+                          ✎
+                        </button>
+                      </td>
                       <td style={{ color: "var(--muted)" }}>{t.date}</td>
                       <td style={{ color: "var(--accent)", fontSize: 7 }}>{t.timeframe ?? "—"}</td>
                       <td style={{ color: "var(--text)" }}>{t.symbol}</td>
@@ -212,22 +221,7 @@ export default function Home() {
                       <td style={{ textAlign: "center", color: "var(--accent)" }}>
                         {t.emotion ?? "—"}
                       </td>
-                      <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
-                        <button
-                          className="pixel-btn"
-                          onClick={() => setModal({ open: true, trade: t })}
-                          style={{ fontSize: 8, padding: "4px 6px", marginRight: 4 }}
-                        >
-                          ✎
-                        </button>
-                        <button
-                          className="pixel-btn pixel-btn-danger"
-                          onClick={() => remove(t.id)}
-                          style={{ fontSize: 8, padding: "4px 6px" }}
-                        >
-                          ✕
-                        </button>
-                      </td>
+
                     </tr>
                   );
                 })}

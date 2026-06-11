@@ -500,12 +500,14 @@ export function TradeModal({ onClose, onSave, initial, settings, mode }: Props) 
           </form>
 
           {/* Fixed footer */}
-          <div style={{ padding: "12px 16px", flexShrink: 0, borderTop: "1px solid var(--border)", display: "flex", gap: 8 }}>
-            <button type="submit" form="" className="pixel-btn pixel-btn-filled" style={{ flex: 1 }}
+          <div style={{ padding: "14px 16px", flexShrink: 0, borderTop: "1px solid var(--border)", display: "flex", gap: 10 }}>
+            <button type="submit" form="" className="pixel-btn pixel-btn-filled"
+              style={{ flex: 1, fontSize: 14, padding: "14px 0", letterSpacing: 2 }}
               onClick={handleSubmit as unknown as React.MouseEventHandler}>
               SAVE ►
             </button>
-            <button type="button" className="pixel-btn" onClick={onClose} style={{ flex: 1 }}>
+            <button type="button" className="pixel-btn" onClick={onClose}
+              style={{ flex: 1, fontSize: 14, padding: "14px 0", letterSpacing: 2 }}>
               CANCEL
             </button>
           </div>
