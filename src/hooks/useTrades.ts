@@ -46,6 +46,8 @@ function toDb(t: Omit<Trade, "id">) {
     exit_reason:   t.exitReason    ?? null,
     emotion:       t.emotion       ?? null,
     notes:         t.notes         ?? null,
+    deleted_at:    t.deletedAt     ?? null,
+    mode:          t.mode          ?? "real",
   };
 }
 
