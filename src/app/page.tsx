@@ -7,7 +7,7 @@ import { useTrades } from "@/hooks/useTrades";
 import { useSettings } from "@/components/SettingsProvider";
 import { TradeModal } from "@/components/TradeModal";
 import { EquityChart } from "@/components/EquityChart";
-import { Trade, TradeMode, tradePnl, tradePct } from "@/types/trade";
+import { Trade, TradeMode, tradePnl, tradePct, tradeR } from "@/types/trade";
 
 function exportCsv(trades: Trade[]) {
   const header = "Date,Symbol,Side,Entry,SL,TP1,ExitPrice,PnL,PnL%,Emotion,EntryReasons,ExitReason,Notes\n";
@@ -46,7 +46,7 @@ export default function Home() {
     localStorage.setItem("trade_mode", m);
   }
 
-  const { trades, loading, add, update, remove, totalPnl, winRate, streak } = useTrades(mode);
+  const { trades, loading, add, update, remove, totalPnl, winRate, streak, totalR, avgR } = useTrades(mode);
   const { settings } = useSettings();
   const [modal, setModal] = useState<{ open: boolean; trade?: Trade }>({ open: false });
 
@@ -143,7 +143,7 @@ export default function Home() {
                   <th style={{ textAlign: "center" }}></th>
                   <th style={{ textAlign: "left"  }}>SYMBOL</th>
                   <th style={{ textAlign: "left"  }}>SIDE</th>
-                  <th style={{ textAlign: "right" }}>P&L</th>
+                  <th style={{ textAlign: "right" }}>{mode === "sim" ? "R" : "P&L"}</th>
                   <th style={{ textAlign: "right" }}>%</th>
                 </tr>
               </thead>
@@ -162,7 +162,10 @@ export default function Home() {
                         {t.side === "BUY" ? "▲" : "▼"} {t.side}
                       </td>
                       <td style={{ textAlign: "right", color: pnl == null ? "var(--border)" : pnl >= 0 ? "var(--accent)" : "var(--red)" }}>
-                        {pnl == null ? (isOpen ? <span className="blink" style={{ color: "var(--accent)", fontSize: 7 }}>OPEN</span> : "—") : `${pnl >= 0 ? "+" : ""}$${Math.abs(pnl).toFixed(2)}`}
+                        {mode === "sim"
+                          ? (() => { const r = tradeR(t); return r == null ? (isOpen ? <span className="blink" style={{ color: "var(--accent)", fontSize: 7 }}>OPEN</span> : "—") : <span style={{ color: r >= 0 ? "var(--accent)" : "var(--red)" }}>{r >= 0 ? "+" : ""}{r.toFixed(2)}R</span>; })()
+                          : pnl == null ? (isOpen ? <span className="blink" style={{ color: "var(--accent)", fontSize: 7 }}>OPEN</span> : "—") : `${pnl >= 0 ? "+" : ""}$${Math.abs(pnl).toFixed(2)}`
+                        }
                       </td>
                       <td style={{ textAlign: "right", color: pct == null ? "var(--border)" : pct >= 0 ? "var(--accent)" : "var(--red)" }}>
                         {pct == null ? "—" : `${pct >= 0 ? "+" : ""}${pct.toFixed(1)}%`}

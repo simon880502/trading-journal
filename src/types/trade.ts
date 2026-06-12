@@ -38,3 +38,12 @@ export function tradeRR(entry: number, sl: number, tp: number): number | null {
   if (risk === 0) return null;
   return Math.abs(tp - entry) / risk;
 }
+
+// R multiple: how many R the trade made/lost (based on exit vs entry vs sl)
+export function tradeR(t: Trade): number | null {
+  if (t.exitPrice == null) return null;
+  const risk = Math.abs(t.entry - t.sl);
+  if (risk === 0) return null;
+  const side = t.side === "BUY" ? 1 : -1;
+  return ((t.exitPrice - t.entry) / risk) * side;
+}

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { Trade, TradeMode, tradePnl, tradePct, tradeRR } from "@/types/trade";
+import { Trade, TradeMode, tradePnl, tradePct, tradeRR, tradeR } from "@/types/trade";
 import { TradeModal } from "@/components/TradeModal";
 import { useSettings } from "@/components/SettingsProvider";
 import { useTrades } from "@/hooks/useTrades";
@@ -83,9 +83,12 @@ export default function TradeDetailPage() {
 
   const pnl = tradePnl(trade);
   const pct = tradePct(trade);
+  const r   = tradeR(trade);
   const rr  = trade.sl && trade.tp ? tradeRR(trade.entry, trade.sl, trade.tp) : null;
   const isOpen = trade.exitPrice == null;
-  const pnlColor = pnl == null ? "var(--muted)" : pnl >= 0 ? "var(--accent)" : "var(--red)";
+  const isSim = trade.mode === "sim";
+  const resultValue = isSim ? r : pnl;
+  const pnlColor = resultValue == null ? "var(--muted)" : resultValue >= 0 ? "var(--accent)" : "var(--red)";
 
   return (
     <div className="min-h-screen p-4 md:p-6 space-y-4">
@@ -126,11 +129,16 @@ export default function TradeDetailPage() {
         ) : (
           <>
             <p style={{ fontSize: 22, color: pnlColor }}>
-              {pnl != null ? `${pnl >= 0 ? "+" : ""}$${Math.abs(pnl).toFixed(2)}` : "—"}
+              {isSim
+                ? (r != null ? `${r >= 0 ? "+" : ""}${r.toFixed(2)}R` : "—")
+                : (pnl != null ? `${pnl >= 0 ? "+" : ""}$${Math.abs(pnl).toFixed(2)}` : "—")
+              }
             </p>
-            <p style={{ fontSize: 10, color: pnlColor, marginTop: 4 }}>
-              {pct != null ? `${pct >= 0 ? "+" : ""}${pct.toFixed(2)}%` : ""}
-            </p>
+            {!isSim && pct != null && (
+              <p style={{ fontSize: 10, color: pnlColor, marginTop: 4 }}>
+                {pct >= 0 ? "+" : ""}{pct.toFixed(2)}%
+              </p>
+            )}
           </>
         )}
       </div>
@@ -152,7 +160,7 @@ export default function TradeDetailPage() {
         <p style={{ fontSize: 8, color: "var(--accent)", marginBottom: 10 }}>► TRADE INFO</p>
         <Row label="DATE"         value={trade.date} />
         <Row label="TIMEFRAME"    value={trade.timeframe ?? "—"} />
-        <Row label="POSITION $"   value={`$${trade.positionSize.toLocaleString()}`} />
+        {!isSim && <Row label="POSITION $" value={`$${trade.positionSize.toLocaleString()}`} />}
         <Row label="MODE"         value={trade.mode.toUpperCase()} color={trade.mode === "sim" ? "var(--red)" : "var(--accent)"} />
         {trade.emotion != null && (
           <Row label="EMOTION" value={`${trade.emotion} / 10`} />

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Trade, TradeMode, tradePnl } from "@/types/trade";
+import { Trade, TradeMode, tradePnl, tradeR } from "@/types/trade";
 import { supabase } from "@/lib/supabase";
 
 // ── DB mapping ──────────────────────────────────────────────
@@ -73,6 +73,8 @@ export function useTrades(mode: TradeMode = "real") {
   }, [mode]);
 
   const add = useCallback(async (t: Omit<Trade, "id">) => {
+    // SIM mode: positionSize not needed
+    if (mode === "sim" && !t.positionSize) t = { ...t, positionSize: 0 };
     // Optimistic: add with temp id
     const tempId = crypto.randomUUID();
     const tradeWithMode = { ...t, mode: t.mode ?? mode };
@@ -132,6 +134,11 @@ export function useTrades(mode: TradeMode = "real") {
   const wins      = closed.filter((t) => (tradePnl(t) ?? 0) > 0).length;
   const winRate   = closed.length > 0 ? Math.round((wins / closed.length) * 100) : 0;
 
+  // R stats for sim mode
+  const closedR   = closed.map((t) => tradeR(t)).filter((r): r is number => r !== null);
+  const totalR    = closedR.reduce((s, r) => s + r, 0);
+  const avgR      = closedR.length > 0 ? totalR / closedR.length : 0;
+
   const streak = (() => {
     if (!closed.length) return { count: 0, type: null as "W" | "L" | null };
     const sorted    = [...closed].sort((a, b) => b.date.localeCompare(a.date));
@@ -144,5 +151,5 @@ export function useTrades(mode: TradeMode = "real") {
     return { count, type: firstType };
   })();
 
-  return { trades, loading, add, update, remove, fetchTrashed, restore, purge, totalPnl, winRate, streak };
+  return { trades, loading, add, update, remove, fetchTrashed, restore, purge, totalPnl, winRate, streak, totalR, avgR };
 }

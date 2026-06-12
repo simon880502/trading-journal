@@ -221,10 +221,10 @@ export function TradeModal({ onClose, onSave, onDelete, initial, settings, mode 
     const tp3 = isPct
       ? parseFloat(pctToPrice(form.entry, form.tp3Pct, form.side, "tp"))
       : parseFloat(form.tp3);
-    const positionSize = parseFloat(form.positionSize);
+    const positionSize = mode === "sim" ? 0 : parseFloat(form.positionSize);
     if (isNaN(entry) || entry <= 0)            { setError("INVALID ENTRY");         return; }
     if (isNaN(sl)    || sl    <= 0)            { setError("INVALID SL");            return; }
-    if (isNaN(positionSize) || positionSize <= 0) { setError("INVALID POSITION $"); return; }
+    if (mode !== "sim" && (isNaN(positionSize) || positionSize <= 0)) { setError("INVALID POSITION $"); return; }
 
     onSave({
       date:         form.date,
