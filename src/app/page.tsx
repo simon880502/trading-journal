@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useTrades } from "@/hooks/useTrades";
 import { useSettings } from "@/components/SettingsProvider";
 import { TradeModal } from "@/components/TradeModal";
@@ -33,13 +33,12 @@ function exportCsv(trades: Trade[]) {
 
 export default function Home() {
   const router = useRouter();
-  const [mode, setModeState] = useState<TradeMode>("real");
-
-  // Load last used mode from localStorage
-  useEffect(() => {
-    const saved = localStorage.getItem("trade_mode") as TradeMode | null;
-    if (saved === "real" || saved === "sim") setModeState(saved);
-  }, []);
+  const [mode, setModeState] = useState<TradeMode>(() => {
+    // Read localStorage immediately to avoid real→sim flicker on refresh
+    if (typeof window === "undefined") return "real";
+    const saved = localStorage.getItem("trade_mode");
+    return (saved === "real" || saved === "sim") ? saved : "real";
+  });
 
   function setMode(m: TradeMode) {
     setModeState(m);

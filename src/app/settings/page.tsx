@@ -214,11 +214,11 @@ function TrashSection() {
 export default function SettingsPage() {
   const { settings, update } = useSettings();
 
-  const [mode, setModeState] = useState<TradeMode>("real");
-  useEffect(() => {
-    const saved = localStorage.getItem("trade_mode") as TradeMode | null;
-    if (saved === "real" || saved === "sim") setModeState(saved);
-  }, []);
+  const [mode, setModeState] = useState<TradeMode>(() => {
+    if (typeof window === "undefined") return "real";
+    const saved = localStorage.getItem("trade_mode");
+    return (saved === "real" || saved === "sim") ? saved : "real";
+  });
   function setMode(m: TradeMode) {
     setModeState(m);
     localStorage.setItem("trade_mode", m);
