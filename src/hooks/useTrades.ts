@@ -52,7 +52,8 @@ function toDb(t: Omit<Trade, "id">) {
 }
 
 function sortDesc(trades: Trade[]): Trade[] {
-  return [...trades].sort((a, b) => b.date.localeCompare(a.date));
+  // Keep insertion order from DB (already sorted by created_at desc)
+  return trades;
 }
 
 export function useTrades(mode: TradeMode = "real") {
@@ -65,7 +66,7 @@ export function useTrades(mode: TradeMode = "real") {
       .select("*")
       .is("deleted_at", null)
       .eq("mode", mode)
-      .order("date", { ascending: false })
+      .order("created_at", { ascending: false })
       .then(({ data, error }) => {
         if (!error && data) setTrades(data.map(fromDb));
         setLoading(false);
@@ -131,7 +132,12 @@ export function useTrades(mode: TradeMode = "real") {
 
   const closed    = trades.filter((t) => t.exitPrice != null);
   const totalPnl  = closed.reduce((s, t) => s + (tradePnl(t) ?? 0), 0);
-  const wins      = closed.filter((t) => (tradePnl(t) ?? 0) > 0).length;
+  // Use R for SIM mode, PnL for real mode to determine win/loss
+  const isWin = (t: Trade) => mode === "sim"
+    ? (tradeR(t) ?? 0) > 0
+    : (tradePnl(t) ?? 0) > 0;
+
+  const wins      = closed.filter(isWin).length;
   const winRate   = closed.length > 0 ? Math.round((wins / closed.length) * 100) : 0;
 
   // R stats for sim mode
@@ -142,10 +148,10 @@ export function useTrades(mode: TradeMode = "real") {
   const streak = (() => {
     if (!closed.length) return { count: 0, type: null as "W" | "L" | null };
     const sorted    = [...closed].sort((a, b) => b.date.localeCompare(a.date));
-    const firstType = (tradePnl(sorted[0]) ?? 0) >= 0 ? "W" : "L";
+    const firstType = isWin(sorted[0]) ? "W" : "L";
     let count = 0;
     for (const t of sorted) {
-      if (((tradePnl(t) ?? 0) >= 0 ? "W" : "L") === firstType) count++;
+      if ((isWin(t) ? "W" : "L") === firstType) count++;
       else break;
     }
     return { count, type: firstType };

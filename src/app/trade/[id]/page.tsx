@@ -47,6 +47,7 @@ export default function TradeDetailPage() {
   const [trade, setTrade] = useState<Trade | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   // We need mode from localStorage for useTrades
   const [mode, setMode] = useState<TradeMode>("real");
@@ -109,13 +110,22 @@ export default function TradeDetailPage() {
               {trade.side === "BUY" ? "▲" : "▼"} {trade.side}
             </p>
           </div>
-          <button
-            onClick={() => setEditing(true)}
-            className="pixel-btn"
-            style={{ fontSize: 8, padding: "6px 10px" }}
-          >
-            ✎ EDIT
-          </button>
+          <div style={{ display: "flex", gap: 6 }}>
+            <button
+              onClick={() => setConfirmDelete(true)}
+              className="pixel-btn pixel-btn-danger"
+              style={{ fontSize: 8, padding: "6px 10px" }}
+            >
+              ✕ DEL
+            </button>
+            <button
+              onClick={() => setEditing(true)}
+              className="pixel-btn"
+              style={{ fontSize: 8, padding: "6px 10px" }}
+            >
+              ✎ EDIT
+            </button>
+          </div>
         </div>
       </header>
 
@@ -196,6 +206,40 @@ export default function TradeDetailPage() {
           ♦ <span className="blink">▮</span> ♦
         </p>
       </div>
+
+      {/* Confirm Delete Overlay */}
+      {confirmDelete && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 80,
+          background: "rgba(0,0,0,0.85)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          padding: 24,
+        }}>
+          <div className="pixel-box p-5" style={{ width: "min(90vw, 300px)" }}>
+            <p style={{ fontSize: 10, color: "var(--accent)", marginBottom: 8 }}>⚠ CONFIRM DELETE</p>
+            <p style={{ fontSize: 8, color: "var(--muted)", marginBottom: 20, lineHeight: 2 }}>
+              {trade.symbol} · {trade.side} · {trade.date}
+              <br />This trade will move to Trash.
+            </p>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                className="pixel-btn pixel-btn-danger"
+                style={{ flex: 1, fontSize: 12, padding: "14px 0" }}
+                onClick={() => { remove(trade.id); router.back(); }}
+              >
+                ✕ DELETE
+              </button>
+              <button
+                className="pixel-btn"
+                style={{ flex: 1, fontSize: 12, padding: "14px 0" }}
+                onClick={() => setConfirmDelete(false)}
+              >
+                CANCEL
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Edit Modal */}
       {editing && (
