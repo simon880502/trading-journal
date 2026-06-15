@@ -81,7 +81,12 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       const next = { ...prev, ...patch };
       saveLocal(next);
       // Upsert full settings (creates row if missing, updates if exists)
-      supabase.from("settings").upsert(toDb(next));
+      supabase
+        .from("settings")
+        .upsert(toDb(next), { onConflict: "id" })
+        .then(({ error }) => {
+          if (error) console.error("[Settings] upsert failed:", error.message, error.details);
+        });
       return next;
     });
   }, []);
