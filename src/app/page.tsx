@@ -52,7 +52,20 @@ export default function Home() {
   const closedCount = trades.filter((t) => t.exitPrice != null).length;
   const openCount   = trades.filter((t) => t.exitPrice == null).length;
 
-  const statsGrid = [
+  const statsGrid = mode === "sim" ? [
+    { label: "TOTAL",    value: String(trades.length),   sub: `${openCount} OPEN` },
+    { label: "WIN RATE", value: closedCount ? `${winRate}%` : "N/A", sub: `${closedCount} CLOSED` },
+    {
+      label: "TOTAL R",
+      value: closedCount ? `${totalR >= 0 ? "+" : ""}${totalR.toFixed(2)}R` : "0R",
+      pnl: totalR,
+    },
+    {
+      label: "AVG R",
+      value: closedCount ? `${avgR >= 0 ? "+" : ""}${avgR.toFixed(2)}R` : "0R",
+      pnl: avgR,
+    },
+  ] : [
     { label: "TOTAL",   value: String(trades.length),   sub: `${openCount} OPEN` },
     { label: "WIN RATE", value: closedCount ? `${winRate}%` : "N/A", sub: `${closedCount} CLOSED` },
     {
@@ -117,7 +130,7 @@ export default function Home() {
       </div>
 
       {/* EQUITY CHART */}
-      <EquityChart trades={trades} />
+      <EquityChart trades={trades} mode={mode} />
 
       {/* TRADE TABLE */}
       <div className="pixel-box p-4">

@@ -1,13 +1,13 @@
 "use client";
 
-import { Trade, tradePnl } from "@/types/trade";
+import { Trade, TradeMode, tradePnl, tradeR } from "@/types/trade";
 
 const W = 500;
 const H = 110;
 const PAD_X = 8;
 const PAD_Y = 12;
 
-export function EquityChart({ trades }: { trades: Trade[] }) {
+export function EquityChart({ trades, mode }: { trades: Trade[]; mode: TradeMode }) {
   const closed = trades.filter((t) => t.exitPrice != null);
 
   if (closed.length === 0) {
@@ -24,34 +24,37 @@ export function EquityChart({ trades }: { trades: Trade[] }) {
   const sorted = [...closed].sort((a, b) => a.date.localeCompare(b.date));
 
   let cum = 0;
-  const points = [{ pnl: 0 }];
+  const points = [{ val: 0 }];
   for (const t of sorted) {
-    cum += tradePnl(t) ?? 0;
-    points.push({ pnl: cum });
+    cum += mode === "sim" ? (tradeR(t) ?? 0) : (tradePnl(t) ?? 0);
+    points.push({ val: cum });
   }
 
-  const pnls = points.map((p) => p.pnl);
-  const minP = Math.min(...pnls, 0);
-  const maxP = Math.max(...pnls, 0);
+  const vals = points.map((p) => p.val);
+  const minP = Math.min(...vals, 0);
+  const maxP = Math.max(...vals, 0);
   const range = maxP - minP || 1;
 
   const toX = (i: number) => PAD_X + (i / (points.length - 1)) * (W - PAD_X * 2);
   const toY = (v: number) => H - PAD_Y - ((v - minP) / range) * (H - PAD_Y * 2);
   const zeroY = toY(0);
 
-  let path = `M ${toX(0)} ${toY(points[0].pnl)}`;
+  let path = `M ${toX(0)} ${toY(points[0].val)}`;
   for (let i = 1; i < points.length; i++) {
-    path += ` H ${toX(i)} V ${toY(points[i].pnl)}`;
+    path += ` H ${toX(i)} V ${toY(points[i].val)}`;
   }
 
-  const finalPnl = points[points.length - 1].pnl;
+  const finalVal = points[points.length - 1].val;
+  const finalLabel = mode === "sim"
+    ? `${finalVal >= 0 ? "+" : ""}${finalVal.toFixed(2)}R`
+    : `${finalVal >= 0 ? "+" : ""}$${Math.abs(finalVal).toFixed(2)}`;
 
   return (
     <div className="pixel-box p-4">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-        <p style={{ fontSize: 8, color: "var(--muted)" }}>► EQUITY CURVE</p>
-        <p style={{ fontSize: 8, color: finalPnl >= 0 ? "var(--accent)" : "var(--red)" }}>
-          {finalPnl >= 0 ? "+" : ""}${finalPnl.toFixed(2)}
+        <p style={{ fontSize: 8, color: "var(--muted)" }}>► {mode === "sim" ? "R CURVE" : "EQUITY CURVE"}</p>
+        <p style={{ fontSize: 8, color: finalVal >= 0 ? "var(--accent)" : "var(--red)" }}>
+          {finalLabel}
         </p>
       </div>
 
@@ -63,16 +66,16 @@ export function EquityChart({ trades }: { trades: Trade[] }) {
         <path
           d={path}
           fill="none"
-          stroke={finalPnl >= 0 ? "var(--accent)" : "var(--red)"}
+          stroke={finalVal >= 0 ? "var(--accent)" : "var(--red)"}
           strokeWidth={2}
           strokeLinejoin="miter"
         />
         {points.map((p, i) => (
           <rect
             key={i}
-            x={toX(i) - 3} y={toY(p.pnl) - 3}
+            x={toX(i) - 3} y={toY(p.val) - 3}
             width={6} height={6}
-            fill={p.pnl >= 0 ? "var(--accent)" : "var(--red)"}
+            fill={p.val >= 0 ? "var(--accent)" : "var(--red)"}
           />
         ))}
       </svg>
