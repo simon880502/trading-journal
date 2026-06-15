@@ -52,9 +52,11 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
 
   useEffect(() => {
+    // Fast path: show localStorage immediately while fetching
     const cached = loadLocal();
+    if (cached) setSettings(cached);
 
-    // Load from Supabase; only use it if localStorage is empty (first device ever)
+    // Always fetch from Supabase as source of truth
     supabase
       .from("settings")
       .select("*")
@@ -63,17 +65,10 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       .then(({ data, error }) => {
         if (!error && data) {
           const fetched = fromDb(data);
-          if (!cached) {
-            // First time on this device: trust Supabase
-            setSettings(fetched);
-            saveLocal(fetched);
-          }
-          // If localStorage has data, don't overwrite it with potentially stale Supabase data
+          setSettings(fetched);
+          saveLocal(fetched);
         }
       });
-
-    // Use localStorage immediately (fast path)
-    if (cached) setSettings(cached);
   }, []);
 
   // Apply theme to DOM whenever it changes
