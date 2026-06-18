@@ -454,51 +454,40 @@ export function TradeModal({ onClose, onSave, onDelete, initial, settings, mode 
             </div>
 
             {/* EXIT $ with quick-fill SL/TP buttons */}
-            <div style={{ marginBottom: 6 }}>
-              <PriceRow label="EXIT $" field="exitPrice" form={form} set={set} openPad={setNumpad} optional />
-              <div style={{ display: "flex", gap: 6, paddingLeft: 58, marginTop: 4 }}>
-                {form.sl && (
-                  <button
-                    type="button"
-                    className="pixel-btn"
-                    style={{ fontSize: 7, padding: "3px 8px", color: "var(--red)" }}
-                    onClick={() => set("exitPrice", form.sl)}
-                  >
-                    SL {form.sl}
-                  </button>
-                )}
-                {form.tp && (
-                  <button
-                    type="button"
-                    className="pixel-btn"
-                    style={{ fontSize: 7, padding: "3px 8px", color: "var(--accent)" }}
-                    onClick={() => set("exitPrice", form.tp)}
-                  >
-                    TP1 {form.tp}
-                  </button>
-                )}
-                {form.tp2 && (
-                  <button
-                    type="button"
-                    className="pixel-btn"
-                    style={{ fontSize: 7, padding: "3px 8px", color: "var(--accent)" }}
-                    onClick={() => set("exitPrice", form.tp2)}
-                  >
-                    TP2 {form.tp2}
-                  </button>
-                )}
-                {form.tp3 && (
-                  <button
-                    type="button"
-                    className="pixel-btn"
-                    style={{ fontSize: 7, padding: "3px 8px", color: "var(--accent)" }}
-                    onClick={() => set("exitPrice", form.tp3)}
-                  >
-                    TP3 {form.tp3}
-                  </button>
-                )}
-              </div>
-            </div>
+            {(() => {
+              // Resolve actual prices regardless of pct/price mode
+              const isPct = pctMode === "percent";
+              const resolvedSl  = isPct ? pctToPrice(form.entry, form.slPct,  form.side, "sl") : form.sl;
+              const resolvedTp  = isPct ? pctToPrice(form.entry, form.tpPct,  form.side, "tp") : form.tp;
+              const resolvedTp2 = isPct ? pctToPrice(form.entry, form.tp2Pct, form.side, "tp") : form.tp2;
+              const resolvedTp3 = isPct ? pctToPrice(form.entry, form.tp3Pct, form.side, "tp") : form.tp3;
+              const shortcuts = [
+                { label: "SL",  val: resolvedSl,  color: "var(--red)" },
+                { label: "TP1", val: resolvedTp,  color: "var(--accent)" },
+                { label: "TP2", val: resolvedTp2, color: "var(--accent)" },
+                { label: "TP3", val: resolvedTp3, color: "var(--accent)" },
+              ].filter(s => !!s.val);
+              return (
+                <div style={{ marginBottom: 6 }}>
+                  <PriceRow label="EXIT $" field="exitPrice" form={form} set={set} openPad={setNumpad} optional />
+                  {shortcuts.length > 0 && (
+                    <div style={{ display: "flex", gap: 6, paddingLeft: 58, marginTop: 4, flexWrap: "wrap" }}>
+                      {shortcuts.map(s => (
+                        <button
+                          key={s.label}
+                          type="button"
+                          className="pixel-btn"
+                          style={{ fontSize: 7, padding: "3px 8px", color: s.color }}
+                          onClick={() => set("exitPrice", s.val)}
+                        >
+                          {s.label} {parseFloat(s.val).toFixed(2)}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* ── EMOTION ── */}
             <Section title="EMOTION" />
