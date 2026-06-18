@@ -453,7 +453,52 @@ export function TradeModal({ onClose, onSave, onDelete, initial, settings, mode 
               })}
             </div>
 
-            <PriceRow label="EXIT $" field="exitPrice" form={form} set={set} openPad={setNumpad} optional />
+            {/* EXIT $ with quick-fill SL/TP buttons */}
+            <div style={{ marginBottom: 6 }}>
+              <PriceRow label="EXIT $" field="exitPrice" form={form} set={set} openPad={setNumpad} optional />
+              <div style={{ display: "flex", gap: 6, paddingLeft: 58, marginTop: 4 }}>
+                {form.sl && (
+                  <button
+                    type="button"
+                    className="pixel-btn"
+                    style={{ fontSize: 7, padding: "3px 8px", color: "var(--red)" }}
+                    onClick={() => set("exitPrice", form.sl)}
+                  >
+                    SL {form.sl}
+                  </button>
+                )}
+                {form.tp && (
+                  <button
+                    type="button"
+                    className="pixel-btn"
+                    style={{ fontSize: 7, padding: "3px 8px", color: "var(--accent)" }}
+                    onClick={() => set("exitPrice", form.tp)}
+                  >
+                    TP1 {form.tp}
+                  </button>
+                )}
+                {form.tp2 && (
+                  <button
+                    type="button"
+                    className="pixel-btn"
+                    style={{ fontSize: 7, padding: "3px 8px", color: "var(--accent)" }}
+                    onClick={() => set("exitPrice", form.tp2)}
+                  >
+                    TP2 {form.tp2}
+                  </button>
+                )}
+                {form.tp3 && (
+                  <button
+                    type="button"
+                    className="pixel-btn"
+                    style={{ fontSize: 7, padding: "3px 8px", color: "var(--accent)" }}
+                    onClick={() => set("exitPrice", form.tp3)}
+                  >
+                    TP3 {form.tp3}
+                  </button>
+                )}
+              </div>
+            </div>
 
             {/* ── EMOTION ── */}
             <Section title="EMOTION" />

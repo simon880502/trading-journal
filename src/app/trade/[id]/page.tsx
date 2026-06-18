@@ -60,28 +60,45 @@ export default function TradeDetailPage() {
   const { update, remove } = useTrades(mode);
 
   useEffect(() => {
-    supabase
-      .from("trades")
-      .select("*")
-      .eq("id", id)
-      .single()
+    // Try cache first for instant navigation
+    const cacheKey = "trades_cache";
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) {
+      try {
+        const all: Trade[] = JSON.parse(cached);
+        const found = all.find(t => t.id === id);
+        if (found) { setTrade(found); setLoading(false); }
+        setAllIds(all.map(t => t.id));
+        // Still refresh in background
+        supabase.from("trades").select("*").is("deleted_at", null)
+          .order("created_at", { ascending: false })
+          .then(({ data }) => {
+            if (data) {
+              const all2 = data.map(fromDb);
+              sessionStorage.setItem(cacheKey, JSON.stringify(all2));
+              const found2 = all2.find(t => t.id === id);
+              if (found2) setTrade(found2);
+              setAllIds(all2.map(t => t.id));
+              setLoading(false);
+            }
+          });
+        return;
+      } catch {}
+    }
+    // No cache: fetch all
+    supabase.from("trades").select("*").is("deleted_at", null)
+      .order("created_at", { ascending: false })
       .then(({ data, error }) => {
-        if (!error && data) setTrade(fromDb(data as Record<string, unknown>));
+        if (!error && data) {
+          const all = data.map(fromDb);
+          sessionStorage.setItem(cacheKey, JSON.stringify(all));
+          const found = all.find(t => t.id === id);
+          if (found) setTrade(found);
+          setAllIds(all.map(t => t.id));
+        }
         setLoading(false);
       });
   }, [id]);
-
-  // Fetch all trade IDs for prev/next navigation
-  useEffect(() => {
-    supabase
-      .from("trades")
-      .select("id")
-      .is("deleted_at", null)
-      .order("created_at", { ascending: false })
-      .then(({ data }) => {
-        if (data) setAllIds(data.map((r: { id: string }) => r.id));
-      });
-  }, []);
 
   if (loading) return (
     <div className="min-h-screen p-4 flex items-center justify-center">
@@ -115,7 +132,7 @@ export default function TradeDetailPage() {
       <header className="pixel-box p-4">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
           <button
-            onClick={() => router.back()}
+            onClick={() => router.push("/")}
             className="pixel-btn"
             style={{ fontSize: 8, padding: "6px 10px" }}
           >
