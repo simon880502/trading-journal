@@ -134,7 +134,12 @@ export default function Home() {
 
       {/* TRADE TABLE */}
       <div className="pixel-box p-4">
-        <p style={{ fontSize: 8, color: "var(--text)", marginBottom: 14 }}>► TRADE LOG</p>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+          <p style={{ fontSize: 8, color: "var(--text)" }}>► TRADE LOG</p>
+          <button className="pixel-btn pixel-btn-filled" onClick={() => setModal({ open: true })} style={{ fontSize: 8, padding: "6px 12px" }}>
+            + NEW TRADE
+          </button>
+        </div>
 
         {loading ? (
           <p className="blink" style={{ fontSize: 8, color: "var(--muted)", textAlign: "center", padding: "24px 0" }}>
@@ -192,10 +197,7 @@ export default function Home() {
       </div>
 
       {/* ACTIONS */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
-        <button className="pixel-btn pixel-btn-filled" onClick={() => setModal({ open: true })}>
-          + NEW TRADE
-        </button>
+      <div style={{ display: "flex", justifyContent: "flex-end" }}>
         <button
           className="pixel-btn"
           onClick={() => exportCsv(trades)}

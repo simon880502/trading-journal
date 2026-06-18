@@ -48,6 +48,7 @@ export default function TradeDetailPage() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [allIds, setAllIds] = useState<string[]>([]);
 
   // We need mode from localStorage for useTrades
   const [mode, setMode] = useState<TradeMode>("real");
@@ -70,6 +71,18 @@ export default function TradeDetailPage() {
       });
   }, [id]);
 
+  // Fetch all trade IDs for prev/next navigation
+  useEffect(() => {
+    supabase
+      .from("trades")
+      .select("id")
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .then(({ data }) => {
+        if (data) setAllIds(data.map((r: { id: string }) => r.id));
+      });
+  }, []);
+
   if (loading) return (
     <div className="min-h-screen p-4 flex items-center justify-center">
       <p className="blink" style={{ fontSize: 8, color: "var(--muted)" }}>LOADING...</p>
@@ -81,6 +94,10 @@ export default function TradeDetailPage() {
       <p style={{ fontSize: 8, color: "var(--red)" }}>TRADE NOT FOUND</p>
     </div>
   );
+
+  const curIdx = allIds.indexOf(id);
+  const prevId = curIdx > 0 ? allIds[curIdx - 1] : null;
+  const nextId = curIdx < allIds.length - 1 ? allIds[curIdx + 1] : null;
 
   const pnl = tradePnl(trade);
   const pct = tradePct(trade);
@@ -96,7 +113,7 @@ export default function TradeDetailPage() {
 
       {/* HEADER */}
       <header className="pixel-box p-4">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
           <button
             onClick={() => router.back()}
             className="pixel-btn"
@@ -126,6 +143,28 @@ export default function TradeDetailPage() {
               ✎ EDIT
             </button>
           </div>
+        </div>
+        {/* Prev / Next */}
+        <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+          <button
+            onClick={() => prevId && router.push(`/trade/${prevId}`)}
+            disabled={!prevId}
+            className="pixel-btn"
+            style={{ flex: 1, fontSize: 8, padding: "6px 0", opacity: prevId ? 1 : 0.3 }}
+          >
+            ◄ PREV
+          </button>
+          <span style={{ fontSize: 7, color: "var(--muted)", alignSelf: "center", whiteSpace: "nowrap" }}>
+            {curIdx >= 0 ? `${curIdx + 1} / ${allIds.length}` : ""}
+          </span>
+          <button
+            onClick={() => nextId && router.push(`/trade/${nextId}`)}
+            disabled={!nextId}
+            className="pixel-btn"
+            style={{ flex: 1, fontSize: 8, padding: "6px 0", opacity: nextId ? 1 : 0.3 }}
+          >
+            NEXT ►
+          </button>
         </div>
       </header>
 
