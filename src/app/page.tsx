@@ -104,15 +104,24 @@ export default function Home() {
                 </span>
               )}
               {/* Account switcher */}
-              <select
-                value={activeId ?? ""}
-                onChange={e => setActiveId(e.target.value)}
-                style={{ fontSize: 8, background: "var(--bg)", color: "var(--text)", border: "1px solid var(--border)", padding: "4px 6px", cursor: "pointer", fontFamily: "var(--font-pixel)" }}
-              >
-                {accounts.map(a => (
-                  <option key={a.id} value={a.id}>{a.name}</option>
-                ))}
-              </select>
+              {accounts.length > 0 && (
+                <div style={{ display: "flex", gap: 4, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                  {accounts.map(a => (
+                    <button
+                      key={a.id}
+                      onClick={() => setActiveId(a.id)}
+                      className="pixel-btn"
+                      style={
+                        activeId === a.id
+                          ? { fontSize: 7, padding: "4px 8px", background: "var(--accent)", color: "#000", borderColor: "var(--accent2)" }
+                          : { fontSize: 7, padding: "4px 8px" }
+                      }
+                    >
+                      {a.name}
+                    </button>
+                  ))}
+                </div>
+              )}
               <Link href="/settings" className="pixel-btn" style={{ fontSize: 8, padding: "6px 10px" }}>
                 ⚙ SETTINGS
               </Link>
