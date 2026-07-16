@@ -103,24 +103,11 @@ export default function Home() {
                   ◇ SIM
                 </span>
               )}
-              {/* Account switcher */}
-              {accounts.length > 0 && (
-                <div style={{ display: "flex", gap: 4, flexWrap: "wrap", justifyContent: "flex-end" }}>
-                  {accounts.map(a => (
-                    <button
-                      key={a.id}
-                      onClick={() => setActiveId(a.id)}
-                      className="pixel-btn"
-                      style={
-                        activeId === a.id
-                          ? { fontSize: 7, padding: "4px 8px", background: "var(--accent)", color: "#000", borderColor: "var(--accent2)" }
-                          : { fontSize: 7, padding: "4px 8px" }
-                      }
-                    >
-                      {a.name}
-                    </button>
-                  ))}
-                </div>
+              {/* Active account display */}
+              {activeAccount && (
+                <span style={{ fontSize: 7, color: "var(--accent)", border: "1px solid var(--border)", padding: "3px 8px" }}>
+                  ◈ {activeAccount.name}
+                </span>
               )}
               <Link href="/settings" className="pixel-btn" style={{ fontSize: 8, padding: "6px 10px" }}>
                 ⚙ SETTINGS

@@ -214,7 +214,7 @@ function TrashSection() {
 
 export default function SettingsPage() {
   const { settings, update } = useSettings();
-  const { accounts, addAccount, renameAccount, deleteAccount } = useAccounts();
+  const { accounts, activeId, setActiveId, addAccount, renameAccount, deleteAccount } = useAccounts();
   const [newAccName, setNewAccName] = useState("");
   const [editingAccId, setEditingAccId] = useState<string | null>(null);
   const [editingAccName, setEditingAccName] = useState("");
@@ -264,6 +264,25 @@ export default function SettingsPage() {
       {/* ACCOUNTS */}
       <div className="pixel-box p-4" style={{ marginBottom: 12 }}>
         <p style={{ fontSize: 8, color: "var(--accent)", marginBottom: 12 }}>► ACCOUNTS</p>
+        {/* Switch account */}
+        <p style={{ fontSize: 7, color: "var(--muted)", marginBottom: 6 }}>ACTIVE ACCOUNT</p>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 }}>
+          {accounts.map(a => (
+            <button
+              key={a.id}
+              onClick={() => setActiveId(a.id)}
+              className="pixel-btn"
+              style={
+                activeId === a.id
+                  ? { fontSize: 8, padding: "6px 12px", background: "var(--accent)", color: "#000", borderColor: "var(--accent2)" }
+                  : { fontSize: 8, padding: "6px 12px" }
+              }
+            >
+              {activeId === a.id ? "◈ " : ""}{a.name}
+            </button>
+          ))}
+        </div>
+        <p style={{ fontSize: 7, color: "var(--muted)", marginBottom: 6 }}>MANAGE ACCOUNTS</p>
         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 10 }}>
           {accounts.map(a => (
             <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 6 }}>
