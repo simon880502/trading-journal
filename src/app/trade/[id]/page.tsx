@@ -12,6 +12,8 @@ function fromDb(row: Record<string, unknown>): Trade {
   return {
     id:           row.id as string,
     date:         row.date as string,
+    time:         row.time as string ?? undefined,
+    accountId:    row.account_id as string ?? undefined,
     timeframe:    row.timeframe as string ?? undefined,
     symbol:       row.symbol as string,
     side:         row.side as "BUY" | "SELL",
@@ -225,7 +227,7 @@ export default function TradeDetailPage() {
       {/* TRADE INFO */}
       <div className="pixel-box p-4">
         <p style={{ fontSize: 8, color: "var(--accent)", marginBottom: 10 }}>► TRADE INFO</p>
-        <Row label="DATE"         value={trade.date} />
+        <Row label="DATE"         value={trade.time ? `${trade.date} ${trade.time}` : trade.date} />
         <Row label="TIMEFRAME"    value={trade.timeframe ?? "—"} />
         {!isSim && <Row label="POSITION $" value={`$${trade.positionSize.toLocaleString()}`} />}
         <Row label="MODE"         value={trade.mode.toUpperCase()} color={trade.mode === "sim" ? "var(--red)" : "var(--accent)"} />

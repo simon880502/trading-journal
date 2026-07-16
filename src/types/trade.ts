@@ -3,6 +3,8 @@ export type TradeMode = "real" | "sim";
 export interface Trade {
   id: string;
   date: string;
+  time?: string;       // HH:MM format
+  accountId?: string;  // uuid
   timeframe?: string;
   symbol: string;
   side: "BUY" | "SELL";

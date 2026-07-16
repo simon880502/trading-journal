@@ -10,6 +10,8 @@ function fromDb(row: any): Trade {
   return {
     id:           row.id,
     date:         row.date,
+    time:         row.time ?? undefined,
+    accountId:    row.account_id ?? undefined,
     timeframe:    row.timeframe ?? undefined,
     symbol:       row.symbol,
     side:         row.side,
@@ -33,6 +35,8 @@ function fromDb(row: any): Trade {
 function toDb(t: Omit<Trade, "id">) {
   return {
     date:          t.date,
+    time:          t.time          ?? null,
+    account_id:    t.accountId     ?? null,
     timeframe:     t.timeframe     ?? null,
     symbol:        t.symbol,
     side:          t.side,
@@ -58,29 +62,30 @@ function sortDesc(trades: Trade[]): Trade[] {
   return trades;
 }
 
-export function useTrades(mode: TradeMode = "real") {
+export function useTrades(mode: TradeMode = "real", accountId?: string) {
   const [trades, setTrades]   = useState<Trade[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase
+    let query = supabase
       .from("trades")
       .select("*")
       .is("deleted_at", null)
-      .eq("mode", mode)
-      .order("created_at", { ascending: false })
-      .then(({ data, error }) => {
+      .eq("mode", mode);
+    if (accountId) query = query.eq("account_id", accountId);
+    query.order("created_at", { ascending: false })
+      .then(({ data, error }: { data: any[] | null; error: any }) => {
         if (!error && data) setTrades(data.map(fromDb));
         setLoading(false);
       });
-  }, [mode]);
+  }, [mode, accountId]);
 
   const add = useCallback(async (t: Omit<Trade, "id">) => {
     // SIM mode: positionSize not needed
     if (mode === "sim" && !t.positionSize) t = { ...t, positionSize: 0 };
     // Optimistic: add with temp id
     const tempId = crypto.randomUUID();
-    const tradeWithMode = { ...t, mode: t.mode ?? mode };
+    const tradeWithMode = { ...t, mode: t.mode ?? mode, accountId: t.accountId ?? accountId };
     setTrades((prev) => sortDesc([...prev, { ...tradeWithMode, id: tempId }]));
 
     const { data, error } = await supabase

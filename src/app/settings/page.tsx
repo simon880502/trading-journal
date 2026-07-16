@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useEffect, useCallback } from "react";
 import { useSettings } from "@/components/SettingsProvider";
 import { useTrades } from "@/hooks/useTrades";
+import { useAccounts } from "@/hooks/useAccounts";
 import { Trade, TradeMode } from "@/types/trade";
 import { DEFAULT_SETTINGS, THEMES, ThemeName } from "@/types/settings";
 
@@ -213,6 +214,10 @@ function TrashSection() {
 
 export default function SettingsPage() {
   const { settings, update } = useSettings();
+  const { accounts, addAccount, renameAccount, deleteAccount } = useAccounts();
+  const [newAccName, setNewAccName] = useState("");
+  const [editingAccId, setEditingAccId] = useState<string | null>(null);
+  const [editingAccName, setEditingAccName] = useState("");
 
   const [mode, setModeState] = useState<TradeMode>(() => {
     if (typeof window === "undefined") return "real";
@@ -255,6 +260,65 @@ export default function SettingsPage() {
         </Link>
         <h1 style={{ fontSize: 14, color: "var(--text)" }}>⚙ SETTINGS</h1>
       </header>
+
+      {/* ACCOUNTS */}
+      <div className="pixel-box p-4" style={{ marginBottom: 12 }}>
+        <p style={{ fontSize: 8, color: "var(--accent)", marginBottom: 12 }}>► ACCOUNTS</p>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 10 }}>
+          {accounts.map(a => (
+            <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              {editingAccId === a.id ? (
+                <>
+                  <input
+                    className="pixel-input"
+                    style={{ flex: 1, marginBottom: 0, fontSize: 8 }}
+                    value={editingAccName}
+                    onChange={e => setEditingAccName(e.target.value)}
+                  />
+                  <button className="pixel-btn" style={{ fontSize: 7, padding: "4px 8px" }}
+                    onClick={() => { renameAccount(a.id, editingAccName); setEditingAccId(null); }}>
+                    ✓
+                  </button>
+                  <button className="pixel-btn" style={{ fontSize: 7, padding: "4px 8px" }}
+                    onClick={() => setEditingAccId(null)}>
+                    ✕
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span style={{ flex: 1, fontSize: 8, color: "var(--text)" }}>{a.name}</span>
+                  <button className="pixel-btn" style={{ fontSize: 7, padding: "4px 8px" }}
+                    onClick={() => { setEditingAccId(a.id); setEditingAccName(a.name); }}>
+                    ✎
+                  </button>
+                  {accounts.length > 1 && (
+                    <button className="pixel-btn pixel-btn-danger" style={{ fontSize: 7, padding: "4px 8px" }}
+                      onClick={() => deleteAccount(a.id)}>
+                      ✕
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+        {accounts.length < 20 && (
+          <div style={{ display: "flex", gap: 6 }}>
+            <input
+              className="pixel-input"
+              style={{ flex: 1, marginBottom: 0, fontSize: 8 }}
+              placeholder="New account name..."
+              value={newAccName}
+              onChange={e => setNewAccName(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter" && newAccName.trim()) { addAccount(newAccName.trim()); setNewAccName(""); } }}
+            />
+            <button className="pixel-btn pixel-btn-filled" style={{ fontSize: 7, padding: "4px 10px" }}
+              onClick={() => { if (newAccName.trim()) { addAccount(newAccName.trim()); setNewAccName(""); } }}>
+              + ADD
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* TRADING MODE */}
       <div className="pixel-box p-4" style={{ marginBottom: 12 }}>

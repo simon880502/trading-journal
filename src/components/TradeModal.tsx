@@ -38,6 +38,7 @@ interface FormState {
   exitReason: string;
   emotion: number | null;
   notes: string;
+  time: string;
   // percentage inputs
   slPct: string;
   tpPct: string;
@@ -72,6 +73,7 @@ function initForm(t?: Trade): FormState {
     exitReason:   t?.exitReason               ?? "",
     emotion:      t?.emotion                   ?? null,
     notes:        t?.notes                     ?? "",
+    time:         t?.time                      ?? "",
     slPct:        "",
     tpPct:        "",
     tp2Pct:       "",
@@ -265,6 +267,7 @@ export function TradeModal({ onClose, onSave, onDelete, initial, settings, mode 
       exitReason:   form.exitReason || undefined,
       emotion:      form.emotion ?? undefined,
       notes:        form.notes.trim() || undefined,
+      time:         form.time || undefined,
       mode:         initial?.mode ?? mode,
       screenshots:  screenshots,
     });
@@ -349,14 +352,24 @@ export function TradeModal({ onClose, onSave, onDelete, initial, settings, mode 
             </div>
 
             {/* ── DATE ── */}
-            <Section title="DATE" />
-            <input
-              type="date"
-              className="pixel-input"
-              value={form.date}
-              onChange={(e) => set("date", e.target.value)}
-            />
-
+            <Section title="DATE & TIME" />
+            <div style={{ display: "flex", gap: 8, marginBottom: 6 }}>
+              <input
+                type="date"
+                className="pixel-input"
+                style={{ flex: 2, marginBottom: 0 }}
+                value={form.date}
+                onChange={(e) => set("date", e.target.value)}
+              />
+              <input
+                type="time"
+                className="pixel-input"
+                style={{ flex: 1, marginBottom: 0 }}
+                value={form.time}
+                onChange={(e) => set("time", e.target.value)}
+                placeholder="HH:MM"
+              />
+            </div>
             {/* ── TIMEFRAME ── */}
             <Section title="TIMEFRAME" />
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useTrades } from "@/hooks/useTrades";
+import { useAccounts } from "@/hooks/useAccounts";
 import { useSettings } from "@/components/SettingsProvider";
 import { TradeModal } from "@/components/TradeModal";
 import { EquityChart } from "@/components/EquityChart";
@@ -45,7 +46,8 @@ export default function Home() {
     localStorage.setItem("trade_mode", m);
   }
 
-  const { trades, loading, add, update, remove, totalPnl, winRate, streak, totalR, avgR } = useTrades(mode);
+  const { accounts, activeAccount, activeId, setActiveId, addAccount } = useAccounts();
+  const { trades, loading, add, update, remove, totalPnl, winRate, streak, totalR, avgR } = useTrades(mode, activeId ?? undefined);
   const { settings } = useSettings();
   const [modal, setModal] = useState<{ open: boolean; trade?: Trade }>({ open: false });
 
@@ -95,12 +97,22 @@ export default function Home() {
           </div>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
             <p style={{ fontSize: 8, color: "var(--muted)" }}>{new Date().toISOString().slice(0, 10)}</p>
-            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
               {mode === "sim" && (
                 <span style={{ fontSize: 7, color: "var(--red)", border: "1px solid var(--red)", padding: "3px 6px" }}>
                   ◇ SIM
                 </span>
               )}
+              {/* Account switcher */}
+              <select
+                value={activeId ?? ""}
+                onChange={e => setActiveId(e.target.value)}
+                style={{ fontSize: 8, background: "var(--bg)", color: "var(--text)", border: "1px solid var(--border)", padding: "4px 6px", cursor: "pointer", fontFamily: "var(--font-pixel)" }}
+              >
+                {accounts.map(a => (
+                  <option key={a.id} value={a.id}>{a.name}</option>
+                ))}
+              </select>
               <Link href="/settings" className="pixel-btn" style={{ fontSize: 8, padding: "6px 10px" }}>
                 ⚙ SETTINGS
               </Link>
@@ -224,7 +236,7 @@ export default function Home() {
           onClose={() => setModal({ open: false })}
           onSave={(t) => {
             if (modal.trade) update(modal.trade.id, t);
-            else add({ ...t, mode });
+            else add({ ...t, mode, accountId: activeId ?? undefined });
             setModal({ open: false });
           }}
           onDelete={(id) => { remove(id); setModal({ open: false }); }}
