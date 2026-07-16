@@ -28,6 +28,7 @@ function fromDb(row: Record<string, unknown>): Trade {
     notes:        row.notes as string ?? undefined,
     deletedAt:    row.deleted_at as string ?? undefined,
     mode:         (row.mode as TradeMode) ?? "real",
+    screenshots:  (row.screenshots as string[]) ?? [],
   };
 }
 
@@ -243,6 +244,20 @@ export default function TradeDetailPage() {
           {trade.exitReason && (
             <Row label="EXIT" value={trade.exitReason} />
           )}
+        </div>
+      )}
+
+      {/* SCREENSHOTS */}
+      {trade.screenshots && trade.screenshots.length > 0 && (
+        <div className="pixel-box p-4">
+          <p style={{ fontSize: 8, color: "var(--accent)", marginBottom: 10 }}>► SCREENSHOTS</p>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {trade.screenshots.map((url, i) => (
+              <a key={i} href={url} target="_blank" rel="noopener noreferrer">
+                <img src={url} alt={`screenshot ${i+1}`} style={{ width: 100, height: 100, objectFit: "cover", border: "1px solid var(--border)", borderRadius: 3 }} />
+              </a>
+            ))}
+          </div>
         </div>
       )}
 

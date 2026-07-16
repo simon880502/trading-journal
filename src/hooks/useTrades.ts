@@ -26,6 +26,7 @@ function fromDb(row: any): Trade {
     notes:        row.notes        ?? undefined,
     deletedAt:    row.deleted_at   ?? undefined,
     mode:         (row.mode as TradeMode) ?? "real",
+    screenshots:  row.screenshots ?? [],
   };
 }
 
@@ -48,6 +49,7 @@ function toDb(t: Omit<Trade, "id">) {
     notes:         t.notes         ?? null,
     deleted_at:    t.deletedAt     ?? null,
     mode:          t.mode          ?? "real",
+    screenshots:   t.screenshots   ?? [],
   };
 }
 

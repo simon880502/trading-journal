@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef } from "react";
+import { supabase } from "@/lib/supabase";
 import { Trade, TradeMode, tradeRR } from "@/types/trade";
 import { Settings } from "@/types/settings";
 import { NumPad } from "@/components/NumPad";
@@ -165,6 +166,28 @@ export function TradeModal({ onClose, onSave, onDelete, initial, settings, mode 
   const [error, setError] = useState("");
   const [pctMode, setPctMode] = useState<PctMode>("price");
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [screenshots, setScreenshots] = useState<string[]>(initial?.screenshots ?? []);
+  const [uploading, setUploading] = useState(false);
+  const imgInputRef = useRef<HTMLInputElement>(null);
+
+  async function uploadScreenshot(file: File) {
+    if (screenshots.length >= 3) return;
+    setUploading(true);
+    const ext = file.name.split(".").pop() ?? "jpg";
+    const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const { error } = await supabase.storage.from("trade-screenshots").upload(path, file, { upsert: true });
+    if (!error) {
+      const { data: urlData } = supabase.storage.from("trade-screenshots").getPublicUrl(path);
+      setScreenshots(prev => [...prev, urlData.publicUrl]);
+    }
+    setUploading(false);
+  }
+
+  async function removeScreenshot(url: string) {
+    const path = url.split("/trade-screenshots/")[1];
+    await supabase.storage.from("trade-screenshots").remove([path]);
+    setScreenshots(prev => prev.filter(u => u !== url));
+  }
 
   function set(k: keyof FormState, v: string | number | string[] | null) {
     setForm((p) => ({ ...p, [k]: v }));
@@ -243,6 +266,7 @@ export function TradeModal({ onClose, onSave, onDelete, initial, settings, mode 
       emotion:      form.emotion ?? undefined,
       notes:        form.notes.trim() || undefined,
       mode:         initial?.mode ?? mode,
+      screenshots:  screenshots,
     });
     onClose();
   }
@@ -518,6 +542,43 @@ export function TradeModal({ onClose, onSave, onDelete, initial, settings, mode 
                 );
               })}
             </div>
+
+            {/* ── SCREENSHOTS ── */}
+            <Section title="SCREENSHOTS" />
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
+              {screenshots.map((url, i) => (
+                <div key={i} style={{ position: "relative" }}>
+                  <img src={url} alt={`screenshot ${i+1}`} style={{ width: 80, height: 80, objectFit: "cover", border: "1px solid var(--border)", borderRadius: 2 }} />
+                  <button
+                    type="button"
+                    onClick={() => removeScreenshot(url)}
+                    style={{ position: "absolute", top: 2, right: 2, background: "rgba(0,0,0,0.7)", color: "#fff", border: "none", borderRadius: 2, fontSize: 9, padding: "1px 4px", cursor: "pointer" }}
+                  >✕</button>
+                </div>
+              ))}
+              {screenshots.length < 3 && (
+                <button
+                  type="button"
+                  onClick={() => imgInputRef.current?.click()}
+                  disabled={uploading}
+                  style={{ width: 80, height: 80, background: "var(--bg)", border: "1px dashed var(--border)", borderRadius: 2, cursor: uploading ? "wait" : "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4 }}
+                >
+                  <span style={{ fontSize: 20, opacity: 0.4 }}>＋</span>
+                  <span style={{ fontSize: 7, color: "var(--muted)" }}>{uploading ? "上傳中..." : "新增截圖"}</span>
+                </button>
+              )}
+            </div>
+            <input
+              ref={imgInputRef}
+              type="file"
+              accept="image/*"
+              style={{ display: "none" }}
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (file) await uploadScreenshot(file);
+                e.target.value = "";
+              }}
+            />
 
             {/* ── NOTES ── */}
             <Section title="NOTES" />

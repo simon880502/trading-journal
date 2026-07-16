@@ -19,6 +19,7 @@ export interface Trade {
   notes?: string;
   deletedAt?: string;  // ISO string; present = soft-deleted
   mode: TradeMode;       // "real" or "sim"
+  screenshots: string[]; // public URLs
 }
 
 export function tradePnl(t: Trade): number | null {
